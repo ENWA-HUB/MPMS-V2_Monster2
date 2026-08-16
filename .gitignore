@@ -1,0 +1,12 @@
+**/bin/
+**/obj/
+**/node_modules/
+**/dist/
+**/data/*.db
+.env
+.DS_Store
+
+# Local SQLite data
+backend/MAIPT.PM.Api/data/*.db
+backend/MAIPT.PM.Api/data/*.db-shm
+backend/MAIPT.PM.Api/data/*.db-wal

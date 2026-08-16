@@ -1,0 +1,17 @@
+services:
+  api:
+    build: ./backend/MAIPT.PM.Api
+    ports:
+      - "5088:8080"
+    volumes:
+      - maipt_data:/app/data
+    environment:
+      DB_PROVIDER: sqlite
+  web:
+    build: ./frontend
+    ports:
+      - "8088:80"
+    depends_on:
+      - api
+volumes:
+  maipt_data:
