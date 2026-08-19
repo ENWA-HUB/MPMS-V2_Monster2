@@ -1,0 +1,8 @@
+Required MonsterASP environment variables:
+MPMS_M365_TENANT_ID=<tenant id>
+MPMS_M365_CLIENT_ID=<client id>
+MPMS_M365_CLIENT_SECRET=<client secret VALUE>
+MPMS_MAIL_FROM=maipt@maipt.org
+MPMS_PUBLIC_URL=https://maipt.runasp.net
+
+Do not place the real client secret in source code or this ZIP.

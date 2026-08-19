@@ -1,0 +1,143 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { CopyPlus, Download, Edit3, FileSpreadsheet, Lock, LockOpen, Plus, Search, Trash2, Upload, X } from 'lucide-react';
+import { deleteJson, getJson, postJson, putJson } from '../lib/api';
+
+type Project={id:number;code:string;name:string};
+type User={id:number;name:string;email:string;jobTitle:string;department:string;status:string};
+type Period={id:number;periodKey:string;period:string;periodType?:'MONTHLY'|'YEARLY';level:string;userId?:number;employeeName:string;department:string;status:string;isLocked:boolean;sourceSheet:string};
+type Item={id:number;performancePeriodId:number;projectId?:number;project?:string;sourceRow:number;strategy:string;function:string;plan:string;actual:string;weight:number;selfScore:number;managerScore:number;hodScore:number;finalScore:number;nextPlan:string;note:string;allocationsJson:string;status:string};
+type Overview={periods:Period[];selected?:Period;items:Item[];teamScore:number;selfScore:number;managerScore:number;totalWeight:number;canManage:boolean;currentUserId:number};
+const blank={projectId:'',strategy:'',function:'',plan:'',actual:'',weight:'0',selfScore:'0',managerScore:'0',hodScore:'0',nextPlan:'',note:'',status:'OPEN'};
+const pct=(v:number)=>`${Math.round(v*100)}%`;
+
+export function TeamPerformancePage(){
+ const kpiImportRef=useRef<HTMLInputElement|null>(null);
+ const [data,setData]=useState<Overview|null>(null);const [projects,setProjects]=useState<Project[]>([]);const [users,setUsers]=useState<User[]>([]);const [periodForm,setPeriodForm]=useState<any>(null);const [editingPeriod,setEditingPeriod]=useState(false);const [periodType,setPeriodType]=useState<'MONTHLY'|'YEARLY'>('MONTHLY');const [filterYear,setFilterYear]=useState(new Date().getFullYear());const [filterMonth,setFilterMonth]=useState<number|''>('');const [selectedId,setSelectedId]=useState<number|undefined>();const [q,setQ]=useState('');const [form,setForm]=useState<any>(null);const [editing,setEditing]=useState<Item|null>(null);const [error,setError]=useState('');const [submitOpen,setSubmitOpen]=useState(false);const [approvers,setApprovers]=useState<any[]>([]);const [approverIds,setApproverIds]=useState<number[]>([]);const [submitMessage,setSubmitMessage]=useState('');const [submitting,setSubmitting]=useState(false);
+ const load=async(id?:number,pt=periodType,y=filterYear,m=filterMonth)=>{const qs=new URLSearchParams();if(id)qs.set('periodId',String(id));qs.set('periodType',pt);qs.set('year',String(y));if(pt==='MONTHLY'&&m!=='')qs.set('month',String(m));const [d,p,u]=await Promise.all([getJson<Overview>(`/performance/overview?${qs.toString()}`),getJson<Project[]>('/projects'),getJson<User[]>('/team/users')]);setData(d);setProjects(p);setUsers(u);if(d.selected)setSelectedId(d.selected.id);else setSelectedId(undefined)};
+ useEffect(()=>{load(undefined,periodType,filterYear,filterMonth).catch(e=>setError(String(e)))},[periodType,filterYear,filterMonth]);
+ const rows=useMemo(()=>data?.items.filter(x=>!q||`${x.plan} ${x.actual} ${x.project||''} ${x.function}`.toLowerCase().includes(q.toLowerCase()))||[],[data,q]);
+ const choose=async(id:number)=>{setSelectedId(id);try{await load(id,periodType,filterYear,filterMonth)}catch(e){setError(String(e))}};
+ const savePeriod=async(e:React.FormEvent)=>{e.preventDefault();const u=users.find(x=>x.id===Number(periodForm.userId));if(!u)return;const pt=periodForm.periodType||'MONTHLY';const period=pt==='YEARLY'?String(periodForm.year):`${periodForm.year}-${String(periodForm.month).padStart(2,'0')}`;try{
+   if(editingPeriod&&data?.selected){
+     await putJson(`/performance/periods/${data.selected.id}`,{...data.selected,userId:u.id,employeeName:u.name,department:periodForm.department||u.department||'IT',period,level:periodForm.level||'INDIVIDUAL',status:periodForm.status||'OPEN'});
+     setPeriodForm(null);setEditingPeriod(false);setPeriodType(pt);setFilterYear(Number(periodForm.year));setFilterMonth(pt==='MONTHLY'?Number(periodForm.month):'');await load(data.selected.id,pt,Number(periodForm.year),pt==='MONTHLY'?Number(periodForm.month):'');
+   }else{
+     const payload={periodKey:`${u.name}-${period}-${Date.now()}`,period,level:periodForm.level||'INDIVIDUAL',userId:u.id,employeeName:u.name,department:periodForm.department||u.department||'IT',sourceSheet:'MPMS',status:'OPEN',isLocked:false};
+     const r=await postJson<{id:number}>('/performance/periods',payload);setPeriodForm(null);setEditingPeriod(false);setPeriodType(pt);setFilterYear(Number(periodForm.year));setFilterMonth(pt==='MONTHLY'?Number(periodForm.month):'');await load(r.id,pt,Number(periodForm.year),pt==='MONTHLY'?Number(periodForm.month):'');
+   }
+ }catch(e){setError(String(e))}};
+ const openEditPeriod=()=>{if(!data?.selected)return;const matched=users.find(u=>u.name===data.selected?.employeeName);const pt=(data.selected.periodType||(data.selected.period.length===4?'YEARLY':'MONTHLY')) as 'MONTHLY'|'YEARLY';const [yy,mm]=data.selected.period.split('-');setEditingPeriod(true);setPeriodForm({userId:String(data.selected.userId||matched?.id||''),periodType:pt,year:Number(yy),month:mm?Number(mm):1,level:data.selected.level||'INDIVIDUAL',department:data.selected.department||matched?.department||'IT',status:data.selected.status||'OPEN'})};
+ const openNew=()=>{if(!data?.selected)return;setEditing(null);setForm({...blank,performancePeriodId:data.selected.id})};
+ const openEdit=(x:Item)=>{setEditing(x);setForm({...x,projectId:x.projectId?String(x.projectId):'',weight:String(x.weight),selfScore:String(x.selfScore),managerScore:String(x.managerScore),hodScore:String(x.hodScore)})};
+ const save=async(e:React.FormEvent)=>{e.preventDefault();const payload={...form,performancePeriodId:data?.selected?.id,projectId:form.projectId?Number(form.projectId):null,weight:Number(form.weight||0),selfScore:Number(form.selfScore||0),managerScore:Number(form.managerScore||0),hodScore:Number(form.hodScore||0)};try{editing?await putJson(`/performance/items/${editing.id}`,payload):await postJson('/performance/items',payload);setForm(null);setEditing(null);await load(selectedId)}catch(e){setError(String(e))}};
+ const del=async(x:Item)=>{if(!confirm('Delete this performance item?'))return;try{await deleteJson(`/performance/items/${x.id}`);await load(selectedId)}catch(e){setError(String(e))}};
+
+ const clonePeriod=async()=>{if(!data?.selected)return;const next=prompt('New period (YYYY-MM)',data.selected.period);if(!next)return;try{const r=await postJson<{id:number}>(`/performance/periods/${data.selected.id}/clone?period=${encodeURIComponent(next)}`);await load(r.id)}catch(e){setError(String(e))}};
+ const deletePeriod=async()=>{if(!data?.selected)return;if(!confirm(`Delete period ${data.selected.period} for ${data.selected.employeeName||data.selected.department}?`))return;try{await deleteJson(`/performance/periods/${data.selected.id}`);setSelectedId(undefined);await load()}catch(e){setError(String(e))}};
+
+ const lock=async()=>{if(!data?.selected)return;try{await postJson(`/performance/periods/${data.selected.id}/lock`);await load(data.selected.id)}catch(e){setError(String(e))}};
+ const exportExcel=async()=>{if(!data?.selected)return;setError('');try{const r=await fetch(`/api/excel/kpi/export/${data.selected.id}`,{credentials:'same-origin'});if(!r.ok)throw new Error(await r.text());const blob=await r.blob();const cd=r.headers.get('content-disposition')||'';const m=cd.match(/filename\*?=(?:UTF-8''|\")?([^\";]+)/i);const name=m?decodeURIComponent(m[1].replace(/\"/g,'')):`KPI_${data.selected.period}_${data.selected.employeeName}.xlsx`;const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.click();URL.revokeObjectURL(url)}catch(e){setError(String(e))}};
+ const importExcel=async(e:React.ChangeEvent<HTMLInputElement>)=>{const file=e.target.files?.[0];e.target.value='';if(!file)return;setError('');try{const formData=new FormData();formData.append('file',file);let r=await fetch('/api/excel/kpi/import?dryRun=true&mode=replace',{method:'POST',body:formData,credentials:'same-origin'});if(!r.ok)throw new Error(await r.text());const preview=await r.json();const sheets=(preview.sheets||[]).map((x:any)=>`${x.employeeName} · ${x.period}: ${x.itemCount} KPI, weight ${Math.round((x.totalWeight||0)*100)}%`).join('\n');const warnings=(preview.warnings||[]).join('\n');if(!confirm(`KPI Excel preview\n\n${sheets||'No valid KPI sheets found.'}${warnings?`\n\nWarnings:\n${warnings}`:''}\n\nImport and replace matching open periods?`))return;const formData2=new FormData();formData2.append('file',file);r=await fetch('/api/excel/kpi/import?dryRun=false&mode=replace',{method:'POST',body:formData2,credentials:'same-origin'});if(!r.ok)throw new Error(await r.text());const result=await r.json();alert(`Imported ${result.importedPeriods||0} period(s), ${result.importedItems||0} KPI item(s).${result.warnings?.length?`\nWarnings: ${result.warnings.join('; ')}`:''}`);await load(undefined,periodType,filterYear,filterMonth)}catch(e){setError(String(e))}};
+
+ if(!data)return <div className="loading">{error||'Loading team performance...'}</div>;
+
+ const openSubmitApproval=async()=>{
+   if(!data?.selected)return;
+
+   setError('');
+
+   try{
+     const a=await getJson<any[]>('/performance/approvers');
+
+     setApprovers(
+       a.filter((x:any)=>x.id!==data.currentUserId)
+     );
+
+     setApproverIds([]);
+     setSubmitMessage('');
+     setSubmitOpen(true);
+
+   }catch(e){
+     setError(String(e));
+   }
+ };
+
+ const toggleApprover=(id:number)=>{
+   setApproverIds(current=>
+     current.includes(id)
+       ? current.filter(x=>x!==id)
+       : [...current,id]
+   );
+ };
+
+ const submitForApproval=async()=>{
+   if(!data?.selected)return;
+
+   if(!approverIds.length){
+     setError('Select at least one approver.');
+     return;
+   }
+
+   setSubmitting(true);
+   setError('');
+
+   try{
+     const r=await postJson<any>(
+       `/performance/periods/${data.selected.id}/submit`,
+       {
+         approverIds,
+         message:submitMessage
+       }
+     );
+
+     setSubmitOpen(false);
+
+     // Reload current KPI data using existing load()
+     await load(data.selected.id);
+
+     const mailSent=Number(r?.mailSent||0);
+     const warnings=Array.isArray(r?.mailWarnings)
+       ? r.mailWarnings
+       : [];
+
+     if(warnings.length){
+       alert(
+         `KPI submitted successfully.\n` +
+         `Email sent to ${mailSent} approver(s).\n\n` +
+         `Mail warnings:\n${warnings.join('\n')}`
+       );
+     }else{
+       alert(
+         `KPI submitted successfully.\n` +
+         `Email sent to ${mailSent} approver(s).`
+       );
+     }
+
+   }catch(e){
+     setError(String(e));
+
+   }finally{
+     setSubmitting(false);
+   }
+ };
+
+ return <>
+  <div className="page-title"><div><h1>Team Performance & Monthly KPI</h1><p>UPF-based periodic review: Plan → Actual → Self → Manager → HOD/Final → Lock.</p></div><div className="project-actions"><input ref={kpiImportRef} hidden type="file" accept=".xlsx" onChange={importExcel}/><button className="secondary" onClick={()=>kpiImportRef.current?.click()}><Upload size={16}/> Import Excel</button><button className="secondary" disabled={!data.selected} onClick={exportExcel}><Download size={16}/> Export Excel</button><button className="secondary" onClick={()=>{setEditingPeriod(false);setPeriodForm({userId:data.canManage?'':String(data.currentUserId),periodType,year:filterYear,month:filterMonth===''?new Date().getMonth()+1:filterMonth,level:'INDIVIDUAL',department:users.find(u=>u.id===data.currentUserId)?.department||'IT',status:'OPEN'})}}><Plus size={16}/> New Period</button><button className="secondary" onClick={openEditPeriod} disabled={!data.selected}><Edit3 size={16}/> Edit Period</button><button className="secondary" onClick={clonePeriod}><CopyPlus size={16}/> Clone Period</button>{data.canManage&&<button className="secondary danger-text" onClick={deletePeriod}><Trash2 size={16}/> Delete Period</button>}{data.canManage&&<button className="secondary" onClick={lock}>{data.selected?.isLocked?<LockOpen size={16}/>:<Lock size={16}/>} {data.selected?.isLocked?'Unlock Period':'Lock Period'}</button>}<button className="secondary" onClick={openSubmitApproval} disabled={!data.selected||data.selected.isLocked||data.selected.status==="SUBMITTED"||data.selected.status==="APPROVED"}>Submit for Approval</button><button className="budget-primary" onClick={openNew} disabled={data.selected?.isLocked}><Plus size={16}/> Add KPI Item</button></div></div>
+  {error&&<div className="budget-error">{error}</div>}
+  <section className="performance-period-filters">
+    <label>Period Type<select value={periodType} onChange={e=>{const v=e.target.value as 'MONTHLY'|'YEARLY';setPeriodType(v);if(v==='YEARLY')setFilterMonth('')}}><option value="MONTHLY">Monthly</option><option value="YEARLY">Yearly</option></select></label>
+    <label>Year<select value={filterYear} onChange={e=>setFilterYear(Number(e.target.value))}>{Array.from({length:9},(_,i)=>new Date().getFullYear()-4+i).map(y=><option key={y} value={y}>{y}</option>)}</select></label>
+    {periodType==='MONTHLY'&&<label>Month<select value={filterMonth} onChange={e=>setFilterMonth(e.target.value===''?'':Number(e.target.value))}><option value="">All months</option>{Array.from({length:12},(_,i)=>i+1).map(m=><option key={m} value={m}>Month {String(m).padStart(2,'0')}</option>)}</select></label>}
+    <div className="filter-summary">{periodType==='YEARLY'?`Annual periods · ${filterYear}`:`Monthly periods · ${filterYear}${filterMonth!==''?` / ${String(filterMonth).padStart(2,'0')}`:' / All months'}`}</div>
+  </section>
+  <section className="performance-periods">{data.periods.map(p=><button key={p.id} onClick={()=>choose(p.id)} className={p.id===selectedId?'active':''}><b>{p.employeeName||p.department}</b><span>{p.period} · {p.periodType||((p.period||'').length===4?'YEARLY':'MONTHLY')} · {p.level}</span><em>{p.isLocked?'LOCKED':p.status}</em></button>)}</section>
+  {data.selected&&<><section className="performance-kpis"><div><span>Final Score</span><b>{data.teamScore.toFixed(2)}</b></div><div><span>Self Score</span><b>{data.selfScore.toFixed(2)}</b></div><div><span>Manager Score</span><b>{data.managerScore.toFixed(2)}</b></div><div><span>Total Weight</span><b>{pct(data.totalWeight)}</b></div></section>
+  <section className="data-module-panel"><div className="data-module-toolbar"><label className="module-search"><Search/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search plan or actual result..."/></label><div className="period-source">Source: {data.selected.sourceSheet}</div></div><div className="module-table-wrap"><table className="module-table performance-table"><thead><tr><th>Plan / Deliverable</th><th>Project</th><th>Actual Result</th><th>Weight</th><th>Self</th><th>Manager</th><th>HOD</th><th>Final</th><th>Actions</th></tr></thead><tbody>{rows.map(x=><tr key={x.id}><td><b>{x.plan}</b><small>{x.function||x.strategy}</small></td><td>{x.project||<span className="unlinked">Unlinked</span>}</td><td>{x.actual||'—'}</td><td>{pct(x.weight)}</td><td>{x.selfScore||'—'}</td><td>{x.managerScore||'—'}</td><td>{x.hodScore||'—'}</td><td><strong className={x.finalScore>=4?'score-good':x.finalScore>=3?'score-mid':'score-bad'}>{x.finalScore.toFixed(1)}</strong></td><td><div className="row-actions"><button disabled={data.selected?.isLocked} onClick={()=>openEdit(x)}><Edit3/></button><button disabled={data.selected?.isLocked} className="danger" onClick={()=>del(x)}><Trash2/></button></div></td></tr>)}</tbody></table></div></section></>}
+  {submitOpen&&data.selected&&<div className="budget-modal-backdrop" onMouseDown={()=>setSubmitOpen(false)}><div className="budget-modal approval-submit-modal" onMouseDown={e=>e.stopPropagation()}><div className="budget-modal-head"><div><h3>Submit KPI for Approval</h3><p>{data.selected.employeeName} · {data.selected.period} · select one or more approvers.</p></div><button onClick={()=>setSubmitOpen(false)}><X/></button></div><div className="approver-picker">{approvers.map(a=><label key={a.id} className={approverIds.includes(a.id)?'selected':''}><input type="checkbox" checked={approverIds.includes(a.id)} onChange={()=>toggleApprover(a.id)}/><span><b>{a.name}</b><small>{a.jobTitle||a.department||a.role} · {a.email}</small></span></label>)}</div><label>Message to approvers<textarea rows={3} value={submitMessage} onChange={e=>setSubmitMessage(e.target.value)} placeholder="Please review my KPI for this period."/></label><div className="budget-modal-actions"><button type="button" className="secondary" onClick={()=>setSubmitOpen(false)}>Cancel</button><button type="button" className="budget-primary" disabled={!approverIds.length||submitting} onClick={submitForApproval}>{submitting?'Submitting...':`Submit to ${approverIds.length||0} Approver(s)`}</button></div></div></div>}
+  {periodForm&&<div className="budget-modal-backdrop" onMouseDown={()=>{setPeriodForm(null);setEditingPeriod(false)}}><div className="budget-modal" onMouseDown={e=>e.stopPropagation()}><div className="budget-modal-head"><div><h3>{editingPeriod?'Edit Period':'New Team Performance Period'}</h3><p>{editingPeriod?'Change member, month and period metadata. KPI items remain attached to this period.':'Create a monthly KPI period for any active project team member.'}</p></div><button onClick={()=>{setPeriodForm(null);setEditingPeriod(false)}}><X/></button></div><form onSubmit={savePeriod}>
+<label>Team member<select required value={periodForm.userId} onChange={e=>{const id=e.target.value;const u=users.find(x=>x.id===Number(id));setPeriodForm({...periodForm,userId:id,department:u?.department||periodForm.department})}}><option value="">Select person</option>{users.filter(u=>(data.canManage||(u.id===data.currentUserId))&&(u.status==='ACTIVE'||String(u.id)===String(periodForm.userId))).map(u=><option key={u.id} value={u.id}>{u.name} — {u.jobTitle||u.department}</option>)}</select></label>
+<div className="budget-form-grid"><label>Period Type<select value={periodForm.periodType} onChange={e=>setPeriodForm({...periodForm,periodType:e.target.value})}><option value="MONTHLY">Monthly</option><option value="YEARLY">Yearly</option></select></label><label>Year<input required type="number" min="2020" max="2100" value={periodForm.year} onChange={e=>setPeriodForm({...periodForm,year:Number(e.target.value)})}/></label>{periodForm.periodType==="MONTHLY"&&<label>Month<select value={periodForm.month} onChange={e=>setPeriodForm({...periodForm,month:Number(e.target.value)})}>{Array.from({length:12},(_,i)=>i+1).map(m=><option key={m} value={m}>{String(m).padStart(2,"0")}</option>)}</select></label>}<label>Level<select value={periodForm.level} onChange={e=>setPeriodForm({...periodForm,level:e.target.value})}><option>INDIVIDUAL</option><option>DEPARTMENT</option><option>PROJECT</option></select></label><label>Department<input value={periodForm.department} onChange={e=>setPeriodForm({...periodForm,department:e.target.value})}/></label><label>Workflow Status<input readOnly value={periodForm.status||"OPEN"}/></label></div>
+<div className="budget-modal-actions"><button type="button" className="secondary" onClick={()=>{setPeriodForm(null);setEditingPeriod(false)}}>Cancel</button><button className="budget-primary">{editingPeriod?'Save Changes':'Create Period'}</button></div></form></div></div>}
+  {form&&<div className="budget-modal-backdrop" onMouseDown={()=>setForm(null)}><div className="budget-modal performance-modal" onMouseDown={e=>e.stopPropagation()}><div className="budget-modal-head"><div><h3>{editing?'Edit':'Add'} Performance Item</h3><p>Final score follows HOD → Manager → Self in that priority when a score is entered.</p></div><button onClick={()=>setForm(null)}><X/></button></div><form onSubmit={save}><label>Project<select value={form.projectId||''} onChange={e=>setForm({...form,projectId:e.target.value})}><option value="">Unlinked / General</option>{projects.map(p=><option key={p.id} value={p.id}>{p.code} — {p.name}</option>)}</select></label><label>Plan / Deliverable<textarea required rows={3} value={form.plan} onChange={e=>setForm({...form,plan:e.target.value})}/></label><label>Actual Result<textarea rows={3} value={form.actual} onChange={e=>setForm({...form,actual:e.target.value})}/></label><div className="performance-score-grid"><label>Weight<input type="number" min="0" max="1" step="0.01" value={form.weight} onChange={e=>setForm({...form,weight:e.target.value})}/></label><label>Self<input type="number" min="0" max="5" step="0.1" value={form.selfScore} onChange={e=>setForm({...form,selfScore:e.target.value})}/></label>{data.canManage&&<label>Manager<input type="number" min="0" max="5" step="0.1" value={form.managerScore} onChange={e=>setForm({...form,managerScore:e.target.value})}/></label>}{data.canManage&&<label>HOD<input type="number" min="0" max="5" step="0.1" value={form.hodScore} onChange={e=>setForm({...form,hodScore:e.target.value})}/></label>}</div><label>Next Month Plan<textarea rows={2} value={form.nextPlan||''} onChange={e=>setForm({...form,nextPlan:e.target.value})}/></label><label>Note<textarea rows={2} value={form.note||''} onChange={e=>setForm({...form,note:e.target.value})}/></label><div className="budget-modal-actions"><button type="button" className="secondary" onClick={()=>setForm(null)}>Cancel</button><button className="budget-primary">Save</button></div></form></div></div>}
+ </>;
+}

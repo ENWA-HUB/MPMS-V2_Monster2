@@ -57,3 +57,25 @@ public class PerformanceItem : AuditableEntity
     public string AllocationsJson { get; set; } = "{}";
     public string Status { get; set; } = "OPEN";
 }
+
+
+public class AuthAccount : AuditableEntity
+{
+    public long UserId { get; set; }
+    public AppUser? User { get; set; }
+    public string PasswordHash { get; set; } = "";
+    public string PasswordSalt { get; set; } = "";
+    public int PasswordIterations { get; set; } = 120000;
+    public bool MustChangePassword { get; set; } = true;
+    public DateTime? LastLoginAt { get; set; }
+    public bool IsEnabled { get; set; } = true;
+}
+
+public class AuthSession : AuditableEntity
+{
+    public long UserId { get; set; }
+    public AppUser? User { get; set; }
+    public string TokenHash { get; set; } = "";
+    public DateTime ExpiresAt { get; set; }
+    public DateTime? RevokedAt { get; set; }
+}

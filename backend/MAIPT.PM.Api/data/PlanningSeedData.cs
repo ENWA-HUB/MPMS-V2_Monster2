@@ -63,6 +63,11 @@ public static class PlanningSeedData
 
     private static async Task EnsureSchemaAsync(AppDbContext db)
     {
+        // EF Core already creates these tables for SQL Server.
+        // The raw SQL below is SQLite-specific.
+        if (db.Database.IsSqlServer())
+            return;
+
         await db.Database.ExecuteSqlRawAsync("""
 CREATE TABLE IF NOT EXISTS BudgetPlanItems (
  Id INTEGER PRIMARY KEY AUTOINCREMENT, CreatedAt TEXT NOT NULL, UpdatedAt TEXT NOT NULL,

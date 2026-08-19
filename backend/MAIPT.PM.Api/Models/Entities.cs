@@ -2,6 +2,9 @@ namespace MAIPT.PM.Api.Models;
 
 public abstract class AuditableEntity
 {
+    public long? CreatedByUserId { get; set; }
+    public long? UpdatedByUserId { get; set; }
+
     public long Id { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
@@ -26,6 +29,15 @@ public class AppUser : AuditableEntity
     public string JobTitle { get; set; } = "";
     public string Department { get; set; } = "";
     public string Role { get; set; } = "MEMBER";
+    public string Status { get; set; } = "ACTIVE";
+}
+
+public class MasterCategory : AuditableEntity
+{
+    public string Code { get; set; } = "";
+    public string Name { get; set; } = "";
+    public string Scope { get; set; } = "GENERAL";
+    public string Description { get; set; } = "";
     public string Status { get; set; } = "ACTIVE";
 }
 

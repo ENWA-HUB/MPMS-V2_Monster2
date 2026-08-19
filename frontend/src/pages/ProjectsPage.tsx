@@ -4,9 +4,48 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import { deleteJson, getJson, postJson, putJson } from '../lib/api';
 
 type Project={
-  id:number; code:string; name:string; description:string; status:string; priority:string;
-  progressPct:number; healthScore:number; healthStatus:string; startDate?:string; endDate?:string;
-  budgetAmount:number; currency:string; portfolio?:string; owner?:string;
+  id:number;
+  orgUnitId:number;
+  portfolioId?:number|null;
+
+  code:string;
+  name:string;
+  description:string;
+
+  ownerId:number;
+  sponsorId?:number|null;
+
+  status:string;
+  priority:string;
+
+  progressPct:number;
+  healthScore:number;
+  healthStatus:string;
+
+  startDate?:string|null;
+  baselineEndDate?:string|null;
+  endDate?:string|null;
+
+  budgetAmount:number;
+  currency:string;
+
+  orgUnit?:string;
+  portfolio?:string;
+  owner?:string;
+  sponsor?:string;
+};
+
+type FormOptions={
+  orgUnits:{id:number;code:string;name:string}[];
+  portfolios:{id:number;code:string;name:string;status:string}[];
+  users:{
+    id:number;
+    name:string;
+    email:string;
+    jobTitle:string;
+    department:string;
+    role:string;
+  }[];
 };
 type Milestone={id:number;name:string;project:string;dueDate?:string;status:string;weightPct:number};
 type ProjectOverview={
@@ -30,6 +69,12 @@ export function ProjectsPage(){
   const [status,setStatus]=useState('ALL');
   const [portfolio,setPortfolio]=useState('ALL');
   const [open,setOpen]=useState(false);
+  const [editing,setEditing]=useState<Project|null>(null);
+  const [options,setOptions]=useState<FormOptions>({
+    orgUnits:[],
+    portfolios:[],
+    users:[]
+  });
   const [saving,setSaving]=useState(false);
   const [error,setError]=useState('');
   const [form,setForm]=useState({
@@ -39,8 +84,14 @@ export function ProjectsPage(){
   });
 
   const load=async()=>{
-    const [p,o]=await Promise.all([getJson<Project[]>('/projects'),getJson<ProjectOverview>('/projects/overview')]);
-    setProjects(p); setOverview(o);
+    const [p,o,fo]=await Promise.all([
+      getJson<Project[]>('/projects'),
+      getJson<ProjectOverview>('/projects/overview'),
+      getJson<FormOptions>('/projects/form-options')
+    ]);
+    setProjects(p);
+    setOverview(o);
+    setOptions(fo);
   };
   useEffect(()=>{load().catch(e=>setError(String(e)))},[]);
 
@@ -62,24 +113,126 @@ export function ProjectsPage(){
   };
 
   const submit=async(e:React.FormEvent)=>{
-    e.preventDefault(); setSaving(true); setError('');
+    e.preventDefault();
+    setSaving(true);
+    setError('');
+
+    const payload={
+      orgUnitId:Number(form.orgUnitId),
+      portfolioId:form.portfolioId
+        ? Number(form.portfolioId)
+        : null,
+
+      code:form.code.trim(),
+      name:form.name.trim(),
+      description:form.description.trim(),
+
+      ownerId:Number(form.ownerId),
+      sponsorId:form.sponsorId
+        ? Number(form.sponsorId)
+        : null,
+
+      status:form.status,
+      priority:form.priority,
+
+      startDate:form.startDate||null,
+      baselineEndDate:form.baselineEndDate||null,
+      endDate:form.endDate||null,
+
+      budgetAmount:Number(form.budgetAmount||0),
+      currency:form.currency,
+
+      progressPct:Number(form.progressPct||0),
+      healthScore:Number(form.healthScore||0),
+      healthStatus:form.healthStatus
+    };
+
     try{
-      await postJson('/projects',{
-        orgUnitId:Number(form.orgUnitId), portfolioId:form.portfolioId?Number(form.portfolioId):null,
-        code:form.code.trim(), name:form.name.trim(), description:form.description.trim(),
-        ownerId:Number(form.ownerId), sponsorId:Number(form.sponsorId), status:form.status, priority:form.priority,
-        startDate:form.startDate||null, endDate:form.endDate||null, baselineEndDate:form.baselineEndDate||null,
-        budgetAmount:Number(form.budgetAmount||0), currency:form.currency, progressPct:Number(form.progressPct||0),
-        healthScore:Number(form.healthScore||0), healthStatus:form.healthStatus
-      });
+      if(editing){
+        await putJson(`/projects/${editing.id}`,payload);
+      }else{
+        await postJson('/projects',payload);
+      }
+
       setOpen(false);
-      setForm({...form,portfolioId:'',code:'',name:'',description:'',startDate:'',endDate:'',baselineEndDate:'',budgetAmount:'0',progressPct:'0',healthScore:'0'});
+      setEditing(null);
       await load();
-    }catch(e){setError(String(e))} finally{setSaving(false)}
+
+    }catch(e){
+      setError(String(e));
+    }finally{
+      setSaving(false);
+    }
   };
 
 
-  const quickEdit=async(p:Project)=>{const name=prompt('Project name',p.name);if(name===null)return;const status=prompt('Status: PLANNING / ACTIVE / ON_HOLD / COMPLETED / CANCELLED',p.status);if(status===null)return;const progress=prompt('Progress %',String(p.progressPct));if(progress===null)return;try{await putJson(`/projects/${p.id}`,{...p,name,status,progressPct:Number(progress)});await load()}catch(e){setError(String(e))}};
+  const openNew=()=>{
+    setEditing(null);
+
+    setForm({
+      orgUnitId:options.orgUnits[0]
+        ? String(options.orgUnits[0].id)
+        : '',
+      portfolioId:'',
+      code:'',
+      name:'',
+      description:'',
+      ownerId:options.users[0]
+        ? String(options.users[0].id)
+        : '',
+      sponsorId:'',
+      status:'PLANNING',
+      priority:'MEDIUM',
+      startDate:'',
+      baselineEndDate:'',
+      endDate:'',
+      budgetAmount:'0',
+      currency:'VND',
+      progressPct:'0',
+      healthScore:'100',
+      healthStatus:'GREEN'
+    });
+
+    setOpen(true);
+  };
+
+
+  const openEdit=(p:Project)=>{
+    setEditing(p);
+
+    setForm({
+      orgUnitId:String(p.orgUnitId||''),
+      portfolioId:p.portfolioId
+        ? String(p.portfolioId)
+        : '',
+
+      code:p.code||'',
+      name:p.name||'',
+      description:p.description||'',
+
+      ownerId:String(p.ownerId||''),
+      sponsorId:p.sponsorId
+        ? String(p.sponsorId)
+        : '',
+
+      status:p.status||'PLANNING',
+      priority:p.priority||'MEDIUM',
+
+      startDate:p.startDate||'',
+      baselineEndDate:p.baselineEndDate||'',
+      endDate:p.endDate||'',
+
+      budgetAmount:String(p.budgetAmount||0),
+      currency:p.currency||'VND',
+
+      progressPct:String(p.progressPct||0),
+      healthScore:String(p.healthScore??100),
+      healthStatus:p.healthStatus||'GREEN'
+    });
+
+    setOpen(true);
+  };
+
   const removeProject=async(p:Project)=>{if(!confirm(`Delete project “${p.name}” and its dependent project-control data?`))return;try{await deleteJson(`/projects/${p.id}`);await load()}catch(e){setError(String(e))}};
 
   if(!overview) return <div className="loading">{error||'Loading projects...'}</div>;
@@ -91,7 +244,7 @@ export function ProjectsPage(){
     <div><h1>Projects</h1><p>Manage portfolio projects, milestones, health, schedule and delivery progress</p></div>
     <div className="project-actions">
       <button className="secondary" onClick={exportCsv}><Download size={16}/> Export</button>
-      <button className="budget-primary" onClick={()=>setOpen(true)}><Plus size={17}/> New Project</button>
+      <button className="budget-primary" onClick={openNew}><Plus size={17}/> New Project</button>
     </div>
    </div>
    {error&&<div className="budget-error">{error}</div>}
@@ -145,7 +298,7 @@ export function ProjectsPage(){
        <td><div className="project-progress"><i><span style={{width:`${Math.min(100,p.progressPct)}%`}}/></i><em>{p.progressPct}%</em></div></td>
        <td><b>{money(p.budgetAmount,p.currency)}</b></td>
        <td><span className={`health-pill ${p.healthStatus.toLowerCase()}`}>{nice(p.healthStatus)}</span></td>
-       <td><span className={`project-status ${p.status.toLowerCase()}`}>{nice(p.status)}</span></td><td><div className="row-actions"><button onClick={()=>quickEdit(p)}><Edit3/></button><button className="danger" onClick={()=>removeProject(p)}><Trash2/></button></div></td>
+       <td><span className={`project-status ${p.status.toLowerCase()}`}>{nice(p.status)}</span></td><td><div className="row-actions"><button onClick={()=>openEdit(p)}><Edit3/></button><button className="danger" onClick={()=>removeProject(p)}><Trash2/></button></div></td>
       </tr>)}
      </tbody></table>
     </div>
@@ -153,12 +306,100 @@ export function ProjectsPage(){
 
    {open&&<div className="budget-modal-backdrop" onMouseDown={()=>setOpen(false)}>
     <div className="budget-modal project-modal" onMouseDown={e=>e.stopPropagation()}>
-     <div className="budget-modal-head"><div><h3>New Project</h3><p>Create a project with schedule, budget and initial health status.</p></div><button onClick={()=>setOpen(false)}><X/></button></div>
+     <div className="budget-modal-head"><div><h3>{editing?'Edit Project':'New Project'}</h3>
+<p>
+{editing
+ ? 'Update complete project information.'
+ : 'Create a project with ownership, schedule, budget and health.'}
+</p></div><button onClick={()=>setOpen(false)}><X/></button></div>
      <form onSubmit={submit}>
       <div className="budget-form-grid">
        <label>Project code<input required value={form.code} onChange={e=>setForm({...form,code:e.target.value})} placeholder="PRJ-003"/></label>
        <label>Project name<input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/></label>
-       <label>Status<select value={form.status} onChange={e=>setForm({...form,status:e.target.value})}><option>PLANNING</option><option>ACTIVE</option><option>ON_HOLD</option><option>COMPLETED</option></select></label>
+       <label>Business Unit
+<select
+  required
+  value={form.orgUnitId}
+  onChange={e=>setForm({...form,orgUnitId:e.target.value})}
+>
+<option value="">Select Business Unit</option>
+{options.orgUnits.map(x=>
+<option key={x.id} value={x.id}>
+{x.code} — {x.name}
+</option>
+)}
+</select>
+</label>
+
+<label>Portfolio
+<select
+  value={form.portfolioId}
+  onChange={e=>setForm({...form,portfolioId:e.target.value})}
+>
+<option value="">Unassigned</option>
+{options.portfolios.map(x=>
+<option key={x.id} value={x.id}>
+{x.code} — {x.name}
+</option>
+)}
+</select>
+</label>
+
+<label>Project Manager / Owner
+<select
+  required
+  value={form.ownerId}
+  onChange={e=>setForm({...form,ownerId:e.target.value})}
+>
+<option value="">Select Owner</option>
+{options.users.map(x=>
+<option key={x.id} value={x.id}>
+{x.name} — {x.jobTitle||x.department||x.role}
+</option>
+)}
+</select>
+</label>
+
+<label>Sponsor
+<select
+  value={form.sponsorId}
+  onChange={e=>setForm({...form,sponsorId:e.target.value})}
+>
+<option value="">No Sponsor</option>
+{options.users.map(x=>
+<option key={x.id} value={x.id}>
+{x.name} — {x.jobTitle||x.department||x.role}
+</option>
+)}
+</select>
+</label>
+
+<label>Baseline End Date
+<input
+ type="date"
+ value={form.baselineEndDate}
+ onChange={e=>setForm({
+   ...form,
+   baselineEndDate:e.target.value
+ })}
+/>
+</label>
+
+<label>Health Score
+<input
+ type="number"
+ min="0"
+ max="100"
+ step="0.1"
+ value={form.healthScore}
+ onChange={e=>setForm({
+   ...form,
+   healthScore:e.target.value
+ })}
+/>
+</label>
+
+<label>Status<select value={form.status} onChange={e=>setForm({...form,status:e.target.value})}><option>PLANNING</option><option>ACTIVE</option><option>ON_HOLD</option><option>COMPLETED</option></select></label>
        <label>Priority<select value={form.priority} onChange={e=>setForm({...form,priority:e.target.value})}><option>LOW</option><option>MEDIUM</option><option>HIGH</option><option>CRITICAL</option></select></label>
        <label>Start date<input type="date" value={form.startDate} onChange={e=>setForm({...form,startDate:e.target.value})}/></label>
        <label>End date<input type="date" value={form.endDate} onChange={e=>setForm({...form,endDate:e.target.value})}/></label>
@@ -168,7 +409,7 @@ export function ProjectsPage(){
        <label>Health<select value={form.healthStatus} onChange={e=>setForm({...form,healthStatus:e.target.value})}><option>GREEN</option><option>AMBER</option><option>RED</option></select></label>
       </div>
       <label>Description<textarea rows={3} value={form.description} onChange={e=>setForm({...form,description:e.target.value})}/></label>
-      <div className="budget-modal-actions"><button type="button" className="secondary" onClick={()=>setOpen(false)}>Cancel</button><button className="budget-primary" disabled={saving}>{saving?'Saving...':'Create Project'}</button></div>
+      <div className="budget-modal-actions"><button type="button" className="secondary" onClick={()=>setOpen(false)}>Cancel</button><button className="budget-primary" disabled={saving}>{saving?'Saving...':editing?'Save Changes':'Create Project'}</button></div>
      </form>
     </div>
    </div>}
