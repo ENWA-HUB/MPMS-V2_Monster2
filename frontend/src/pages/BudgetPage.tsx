@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
+
   ArrowDownRight, ArrowUpRight, CircleDollarSign, Download, Edit3,
   PieChart as PieIcon, Plus, Trash2, TrendingDown, TrendingUp, X
 } from 'lucide-react';
@@ -9,6 +10,9 @@ import {
 } from 'recharts';
 import { deleteJson, getJson, postJson, putJson } from '../lib/api';
 
+import {openBudgetEditor} from '../components/OperationalEditDialogs';
+import {RowMergeButton} from '../components/RowMergeButton';
+import FormattedNumberInput from "../components/FormattedNumberInput";
 type Overview = {
   totalBudget:number;
   totalActual:number;
@@ -61,13 +65,19 @@ function Trend({value,label,inverse=false}:{value:number;label:string;inverse?:b
 }
 
 export function BudgetPage(){
+ const [canDownloadBudget,setCanDownloadBudget]=useState(false);
+ useEffect(()=>{getJson<any>('/access/me').then(a=>{
+   const p=a?.permissions?.BUDGET||[];
+   setCanDownloadBudget(p.includes('DOWNLOAD'));
+ }).catch(()=>setCanDownloadBudget(false))},[]);
+
   const [data,setData]=useState<Overview|null>(null);
   const [projects,setProjects]=useState<Project[]>([]);
   const [open,setOpen]=useState(false);
   const [saving,setSaving]=useState(false);
   const [error,setError]=useState('');
   const [form,setForm]=useState({
-    projectId:'', code:'', category:'IMPLEMENTATION', description:'',
+    projectId:'', category:'IMPLEMENTATION', description:'',
     baselineAmount:'', revisedAmount:'', committedAmount:'0',
     actualAmount:'0', forecastAmount:'', currency:'VND'
   });
@@ -91,7 +101,7 @@ export function BudgetPage(){
       const revised=Number(form.revisedAmount||form.baselineAmount||0);
       await postJson('/budgets',{
         projectId:Number(form.projectId),
-        code:form.code.trim(),
+        
         category:form.category.trim(),
         description:form.description.trim(),
         baselineAmount:Number(form.baselineAmount||0),
@@ -102,14 +112,14 @@ export function BudgetPage(){
         currency:form.currency
       });
       setOpen(false);
-      setForm({projectId:'',code:'',category:'IMPLEMENTATION',description:'',baselineAmount:'',revisedAmount:'',committedAmount:'0',actualAmount:'0',forecastAmount:'',currency:'VND'});
+      setForm({projectId:'',category:'IMPLEMENTATION',description:'',baselineAmount:'',revisedAmount:'',committedAmount:'0',actualAmount:'0',forecastAmount:'',currency:'VND'});
       await load();
     }catch(e){setError(String(e))}
     finally{setSaving(false)}
   };
 
 
-  const editBudget=async(row:Overview['projects'][number])=>{const revised=prompt('Revised budget',String(row.totalBudget));if(revised===null)return;const actual=prompt('Actual spent',String(row.spent));if(actual===null)return;const forecast=prompt('Forecast',String(row.forecast));if(forecast===null)return;try{await putJson(`/budgets/${row.id}`,{projectId:row.projectId,code:row.code,category:row.category,description:'',baselineAmount:Number(revised),revisedAmount:Number(revised),committedAmount:row.committed,actualAmount:Number(actual),forecastAmount:Number(forecast),currency:row.currency});await load()}catch(e){setError(String(e))}};
+  const editBudget=(row:Overview['projects'][number])=>openBudgetEditor(row,load,e=>setError(String(e)));
   const deleteBudget=async(row:Overview['projects'][number])=>{if(!confirm(`Delete budget line ${row.code}?`))return;try{await deleteJson(`/budgets/${row.id}`);await load()}catch(e){setError(String(e))}};
 
   const exportCsv=()=>{
@@ -136,8 +146,9 @@ export function BudgetPage(){
         <p>Track and manage project budgets, commitments, actual spending and forecast.</p>
       </div>
       <div className="budget-actions">
-        <button className="secondary" onClick={exportCsv}><Download size={16}/> Export Report</button>
-        <button className="budget-primary" onClick={()=>setOpen(true)}><Plus size={17}/> New Budget</button>
+        {canDownloadBudget&&<button className="secondary" onClick={exportCsv}><Download size={16}/> Export Report</button>}
+        
+      <button className="budget-primary" onClick={()=>setOpen(true)}><Plus size={17}/> New Budget</button>
       </div>
     </div>
 
@@ -164,7 +175,8 @@ export function BudgetPage(){
           <small className="budget-trend neutral"><PieIcon size={13}/>{money(data.committedAmount,currency)} committed</small>
         </div><PieIcon/>
       </div>
-    </section>
+    
+</section>
 
     <section className="budget-panel budget-chart-panel">
       <div className="budget-panel-head">
@@ -213,7 +225,7 @@ export function BudgetPage(){
               </div>
             </td>
             <td><span className={`budget-status ${row.status.toLowerCase().replaceAll(' ','-')}`}>{row.status}</span></td>
-            <td>{row.trend==='UP'?<ArrowUpRight className="trend-up" size={18}/>:<ArrowDownRight className="trend-down" size={18}/>}</td><td><div className="row-actions"><button onClick={()=>editBudget(row)}><Edit3/></button><button className="danger" onClick={()=>deleteBudget(row)}><Trash2/></button></div></td>
+            <td>{row.trend==='UP'?<ArrowUpRight className="trend-up" size={18}/>:<ArrowDownRight className="trend-down" size={18}/>}</td><td><div className="row-actions"><button onClick={()=>editBudget(row)}><Edit3/></button><RowMergeButton entity="BUDGETS" source={row}/><button className="danger" onClick={()=>deleteBudget(row)}><Trash2/></button></div></td>
           </tr>)}
           </tbody>
         </table>
@@ -231,16 +243,16 @@ export function BudgetPage(){
             <option value="">Select project</option>{projects.map(p=><option key={p.id} value={p.id}>{p.code} — {p.name}</option>)}
           </select></label>
           <div className="budget-form-grid">
-            <label>Budget code<input required placeholder="BL-003" value={form.code} onChange={e=>setForm({...form,code:e.target.value})}/></label>
+            
             <label>Category<input required placeholder="IMPLEMENTATION" value={form.category} onChange={e=>setForm({...form,category:e.target.value})}/></label>
           </div>
           <label>Description<input placeholder="Budget description" value={form.description} onChange={e=>setForm({...form,description:e.target.value})}/></label>
           <div className="budget-form-grid">
-            <label>Baseline amount<input required type="number" min="0" value={form.baselineAmount} onChange={e=>setForm({...form,baselineAmount:e.target.value})}/></label>
-            <label>Revised amount<input type="number" min="0" value={form.revisedAmount} onChange={e=>setForm({...form,revisedAmount:e.target.value})}/></label>
-            <label>Committed<input type="number" min="0" value={form.committedAmount} onChange={e=>setForm({...form,committedAmount:e.target.value})}/></label>
-            <label>Actual<input type="number" min="0" value={form.actualAmount} onChange={e=>setForm({...form,actualAmount:e.target.value})}/></label>
-            <label>Forecast<input type="number" min="0" value={form.forecastAmount} onChange={e=>setForm({...form,forecastAmount:e.target.value})}/></label>
+            <label>Baseline amount<FormattedNumberInput value={form.baselineAmount} decimals={(form.currency||"VND").toUpperCase()==="VND"?0:2} onValueChange={v=>setForm({...form,baselineAmount:v})}/></label>
+            <label>Revised amount<FormattedNumberInput value={form.revisedAmount} decimals={(form.currency||"VND").toUpperCase()==="VND"?0:2} onValueChange={v=>setForm({...form,revisedAmount:v})}/></label>
+            <label>Committed<FormattedNumberInput value={form.committedAmount} decimals={(form.currency||"VND").toUpperCase()==="VND"?0:2} onValueChange={v=>setForm({...form,committedAmount:v})}/></label>
+            <label>Actual<FormattedNumberInput value={form.actualAmount} decimals={(form.currency||"VND").toUpperCase()==="VND"?0:2} onValueChange={v=>setForm({...form,actualAmount:v})}/></label>
+            <label>Forecast<FormattedNumberInput value={form.forecastAmount} decimals={(form.currency||"VND").toUpperCase()==="VND"?0:2} onValueChange={v=>setForm({...form,forecastAmount:v})}/></label>
             <label>Currency<select value={form.currency} onChange={e=>setForm({...form,currency:e.target.value})}><option>VND</option><option>USD</option></select></label>
           </div>
           <div className="budget-modal-actions">

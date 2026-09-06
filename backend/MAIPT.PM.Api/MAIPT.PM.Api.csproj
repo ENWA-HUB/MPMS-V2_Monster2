@@ -14,4 +14,13 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
     <PackageReference Include="ClosedXML" Version="0.105.1" />
   </ItemGroup>
+
+  <!-- KPI_MONSTER_TEMPLATE_PUBLISH_V1 -->
+  <ItemGroup>
+    <Content Include="Templates/KPI/**/*.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

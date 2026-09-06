@@ -4,9 +4,52 @@
 **/dist/
 **/data/*.db
 .env
+.env.*
+!.env.example
 .DS_Store
 
-# Local SQLite data
+# Server-only secrets. Keep templates such as web.config.example in Git.
+**/web.config
+backend/MAIPT.PM.Api/appsettings.Local.json
+backend/MAIPT.PM.Api/appsettings.Production.json
+backend/MAIPT.PM.Api/secrets*.json
+
+# Build / publish output (contains a copy of web.config + appsettings with real values)
+publish/
+publish-*/
+**/publish/
+**/publish-*/
+deploy/
+backend/MAIPT.PM.Api/publish*/
+
+# Data Protection key ring
+backend/MAIPT.PM.Api/data/dp-keys/
+
+# Databases and data dumps - never commit
+*.db
+*.db-shm
+*.db-wal
 backend/MAIPT.PM.Api/data/*.db
-backend/MAIPT.PM.Api/data/*.db-shm
-backend/MAIPT.PM.Api/data/*.db-wal
+backup/
+
+# Spreadsheets / archives with real personnel or financial data.
+# Templates under backend/**/Templates and data/**/seeds stay tracked.
+/*.xlsx
+/*.zip
+/*.rar
+MPMS-MONSTER-*.zip
+
+# Local dev run helper (nhập secret lúc chạy, không lưu)
+run-local.sh
+backend/MAIPT.PM.Api/run-local.sh
+
+# Editor / AI backup snapshots
+*.bak
+*.bak-*
+*.bak.*
+*.backup
+*.backup-*
+/MPMS-V2_Monster/
+backup/
+*.bak_*
+*.bak.*

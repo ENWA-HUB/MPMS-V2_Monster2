@@ -26,8 +26,8 @@ public static class ExcelExchangeService
         var items = await db.PerformanceItems.AsNoTracking()
             .Where(x => x.PerformancePeriodId == periodId).OrderBy(x => x.SourceRow).ThenBy(x => x.Id).ToListAsync();
 
-        var template = Path.Combine(env.ContentRootPath, "Data", "Templates", "UPF_ITJSC.Monthly_KPI.Template.xlsx");
-        if (!File.Exists(template)) throw new FileNotFoundException("KPI Excel template is missing.", template);
+        var template = Path.Combine(env.ContentRootPath, "Templates", "KPI", "KPI-UPF-Template.xlsx");
+        if (!File.Exists(template)) throw new FileNotFoundException("KPI Excel template is missing from Templates/KPI in deployed application.", template);
 
         using var book = new XLWorkbook(template);
         var ws = book.Worksheets.FirstOrDefault(x => x.Name.Equals("NguyenNhuThanh", StringComparison.OrdinalIgnoreCase))
@@ -197,10 +197,19 @@ public static class ExcelExchangeService
         return new { dryRun = false, importedPeriods, importedItems, warnings };
     }
 
-    public static async Task<(byte[] Bytes, string FileName)> ExportBudgetAsync(AppDbContext db, int year)
+    public static async Task<(byte[] Bytes, string FileName)> ExportBudgetAsync(AppDbContext db, int year, AppUser user)
     {
-        var items = await db.BudgetPlanItems.AsNoTracking().Include(x => x.Project)
-            .Where(x => x.BudgetYear == year).OrderBy(x => x.OrgUnit).ThenBy(x => x.Name).ToListAsync();
+        IQueryable<BudgetPlanItem> q = db.BudgetPlanItems
+            .AsNoTracking()
+            .Include(x => x.Project)
+            .Where(x => x.BudgetYear == year);
+
+        q = await RbacService.BudgetScope(db, user, q);
+
+        var items = await q
+            .OrderBy(x => x.OrgUnit)
+            .ThenBy(x => x.Name)
+            .ToListAsync();
         using var book = new XLWorkbook();
         var ws = book.AddWorksheet("Budget Plan");
         var headers = new[] { "Budget Year", "Business Unit", "Project Code", "Plan Item", "Category", "Vendor", "Planned Amount", "Quantity", "Unit Price", "Planned Month", "Status", "Note",
@@ -231,6 +240,7 @@ public static class ExcelExchangeService
         ins.Cell("A3").Value = "Round-trip format: Export from MPMS, edit values, then Import Excel. Required columns: Budget Year, Business Unit, Plan Item, Planned Amount.";
         ins.Cell("A4").Value = "Project Code is optional; if supplied it must match an existing MPMS project code.";
         ins.Cell("A5").Value = "Import mode MERGE updates an existing item matched by Year + Business Unit + Plan Item; otherwise creates a new item.";
+        ins.Cell("A6").Value = "Planned Month format: YYYY-MM, and the year must match Budget Year.";
         ins.Column(1).Width = 110; ins.Range("A1:A8").Style.Alignment.WrapText = true;
 
         using var ms = new MemoryStream(); book.SaveAs(ms);
@@ -265,8 +275,26 @@ public static class ExcelExchangeService
             var monthly = new Dictionary<string, double>();
             var monthNames = new[] { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
             for (var m = 0; m < 12; m++) monthly[monthNames[m]] = CellDouble(ws.Cell(r, 13 + m), warnings, $"Budget Plan!{ws.Cell(r, 13 + m).Address}", false);
+            var plannedMonth = ws.Cell(r, 10).GetString().Trim();
+            if (!string.IsNullOrWhiteSpace(plannedMonth))
+            {
+                var validMonth = false;
+                if (plannedMonth.Length == 7 && plannedMonth[4] == '-' && int.TryParse(plannedMonth[..4], out var plannedYear) && int.TryParse(plannedMonth.Substring(5, 2), out var plannedMonthNo) && plannedMonthNo >= 1 && plannedMonthNo <= 12)
+                    validMonth = plannedYear == year;
+                else
+                {
+                    var parts = plannedMonth.Split('/', StringSplitOptions.TrimEntries);
+                    if (parts.Length == 2 && int.TryParse(parts[0], out var monthNo) && int.TryParse(parts[1], out var yearNo) && monthNo >= 1 && monthNo <= 12)
+                        validMonth = yearNo == year;
+                }
+                if (!validMonth)
+                {
+                    warnings.Add($"Budget Plan row {r}: Planned Month '{plannedMonth}' must belong to Budget Year {year} (use YYYY-MM). Row skipped.");
+                    continue;
+                }
+            }
             rows.Add(new BudgetRow(year, org, projectId, name, ws.Cell(r, 5).GetString().Trim(), ws.Cell(r, 6).GetString().Trim(), amount,
-                NullableDouble(ws.Cell(r, 8)), NullableLong(ws.Cell(r, 9)), ws.Cell(r, 10).GetString().Trim(), ws.Cell(r, 11).GetString().Trim(), ws.Cell(r, 12).GetString().Trim(), monthly, r));
+                NullableDouble(ws.Cell(r, 8)), NullableLong(ws.Cell(r, 9)), plannedMonth, ws.Cell(r, 11).GetString().Trim(), ws.Cell(r, 12).GetString().Trim(), monthly, r));
         }
         if (dryRun) return new { dryRun = true, format = "MPMS", fileName, itemCount = rows.Count, years = rows.Select(x => x.Year).Distinct().OrderBy(x => x), totalPlanned = rows.Sum(x => x.Amount), warnings };
 

@@ -6,6 +6,9 @@ import {
 } from 'recharts';
 import { deleteJson, getJson, postJson, putJson } from '../lib/api';
 
+import {openSupplierEditor} from '../components/OperationalEditDialogs';
+import {SupplierProfileFiles,uploadSupplierProfiles} from '../components/SupplierProfileFiles';
+import {RowMergeButton} from '../components/RowMergeButton';
 type SupplierRow={
   id:number; code:string; name:string; category:string; contactName:string; email:string;
   status:string; rating:number; contractValue:number; currency:string;
@@ -23,11 +26,18 @@ const money=(n:number,c='VND')=>{
 };
 
 export function SupplierPage(){
+ const [profileFiles,setProfileFiles]=useState<File[]>([]);
+ const [canDownloadSuppliers,setCanDownloadSuppliers]=useState(false);
+ useEffect(()=>{getJson<any>('/access/me').then(a=>{
+   const p=a?.permissions?.SUPPLIERS||[];
+   setCanDownloadSuppliers(p.includes('DOWNLOAD'));
+ }).catch(()=>setCanDownloadSuppliers(false))},[]);
+
   const [data,setData]=useState<SupplierOverview|null>(null);
   const [open,setOpen]=useState(false);
   const [saving,setSaving]=useState(false);
   const [error,setError]=useState('');
-  const [form,setForm]=useState({code:'',name:'',taxCode:'',category:'IT Services',contactName:'',email:'',phone:'',address:'',status:'ACTIVE',rating:'0'});
+  const [form,setForm]=useState({code:'',name:'',taxCode:'',category:'IT Services',contactName:'',email:'',phone:'',address:'',status:'ACTIVE',rating:'0',companyName:'',shortName:'',website:'',businessRegistrationNo:'',legalRepresentative:'',registrationDate:'',country:'Vietnam',contactPosition:'',alternativePhone:'',provinceCity:'',paymentTerms:'',currency:'VND',bankName:'',bankAccountNo:'',bankAccountName:'',bankBranch:'',internalOwnerId:'',notes:''});
 
   const load=()=>getJson<SupplierOverview>('/suppliers/overview').then(setData).catch(e=>setError(String(e)));
   useEffect(()=>{load()},[]);
@@ -37,19 +47,50 @@ export function SupplierPage(){
   const submit=async(e:React.FormEvent)=>{
     e.preventDefault(); setSaving(true); setError('');
     try{
-      await postJson('/suppliers',{
-        orgUnitId:1, code:form.code.trim(), name:form.name.trim(), taxCode:form.taxCode.trim(),
+      const created=await postJson<{id:number}>('/suppliers',{
+        orgUnitId:1,  name:form.name.trim(), taxCode:form.taxCode.trim(),
         category:form.category.trim(), contactName:form.contactName.trim(), email:form.email.trim(),
-        phone:form.phone.trim(), address:form.address.trim(), status:form.status, rating:Number(form.rating||0)
+        phone:form.phone.trim(), address:form.address.trim(),companyName:form.companyName.trim(),shortName:form.shortName.trim(),website:form.website.trim(),businessRegistrationNo:form.businessRegistrationNo.trim(),legalRepresentative:form.legalRepresentative.trim(),registrationDate:form.registrationDate||null,country:form.country.trim(),contactPosition:form.contactPosition.trim(),alternativePhone:form.alternativePhone.trim(),provinceCity:form.provinceCity.trim(),paymentTerms:form.paymentTerms.trim(),currency:form.currency,bankName:form.bankName.trim(),bankAccountNo:form.bankAccountNo.trim(),bankAccountName:form.bankAccountName.trim(),bankBranch:form.bankBranch.trim(),internalOwnerId:form.internalOwnerId?Number(form.internalOwnerId):null,notes:form.notes.trim(), status:form.status, rating:Number(form.rating||0)
       });
+      if(profileFiles.length) await uploadSupplierProfiles(created.id,profileFiles);
+      setProfileFiles([]);
       setOpen(false);
-      setForm({code:'',name:'',taxCode:'',category:'IT Services',contactName:'',email:'',phone:'',address:'',status:'ACTIVE',rating:'0'});
+      setForm({
+        code:'',
+        name:'',
+        taxCode:'',
+        category:'IT Services',
+        contactName:'',
+        email:'',
+        phone:'',
+        address:'',
+        status:'ACTIVE',
+        rating:'0',
+        companyName:'',
+        shortName:'',
+        website:'',
+        businessRegistrationNo:'',
+        legalRepresentative:'',
+        registrationDate:'',
+        country:'Vietnam',
+        contactPosition:'',
+        alternativePhone:'',
+        provinceCity:'',
+        paymentTerms:'',
+        currency:'VND',
+        bankName:'',
+        bankAccountNo:'',
+        bankAccountName:'',
+        bankBranch:'',
+        internalOwnerId:'',
+        notes:''
+      });
       await load();
     }catch(e){setError(String(e))} finally{setSaving(false)}
   };
 
 
-  const editSupplier=async(s:SupplierRow)=>{const name=prompt('Supplier name',s.name);if(name===null)return;const status=prompt('Status',s.status);if(status===null)return;const rating=prompt('Rating',String(s.rating||0));try{await putJson(`/suppliers/${s.id}`,{...s,name,status,rating:Number(rating||0),orgUnitId:1});await load()}catch(e){setError(String(e))}};
+  const editSupplier=(s:SupplierRow)=>openSupplierEditor(s,load,e=>setError(String(e)));
   const deleteSupplier=async(s:SupplierRow)=>{if(!confirm(`Delete supplier “${s.name}” and related contracts/evaluations?`))return;try{await deleteJson(`/suppliers/${s.id}`);await load()}catch(e){setError(String(e))}};
 
   const exportCsv=()=>{
@@ -69,8 +110,9 @@ export function SupplierPage(){
     <div className="page-title supplier-title">
       <div><h1>Supplier Management</h1><p>Manage suppliers, contracts, and performance metrics</p></div>
       <div className="supplier-actions">
-        <button className="secondary" onClick={exportCsv}><Download size={16}/> Export Report</button>
-        <button className="budget-primary" onClick={()=>setOpen(true)}><Plus size={17}/> Add Supplier</button>
+        {canDownloadSuppliers&&<button className="secondary" onClick={exportCsv}><Download size={16}/> Export Report</button>}
+        
+      <button className="budget-primary" onClick={()=>setOpen(true)}><Plus size={17}/> Add Supplier</button>
       </div>
     </div>
     {error&&<div className="budget-error">{error}</div>}
@@ -101,7 +143,8 @@ export function SupplierPage(){
           </div>)}
         </div>
       </article>
-    </section>
+    
+</section>
 
     <section className="supplier-panel supplier-list-panel">
       <div className="supplier-panel-head"><h3>Active Suppliers</h3><span>{data.suppliers.filter(x=>x.status==='ACTIVE').length} active / {data.suppliers.length} total</span></div>
@@ -118,7 +161,7 @@ export function SupplierPage(){
           <td><strong className={s.kpiScore>=80?'score-good':s.kpiScore>=60?'score-mid':'score-bad'}>{Math.round(s.kpiScore)}</strong></td>
           <td><span className="supplier-rating">★ {s.rating? s.rating.toFixed(1):'—'}</span></td>
           <td>{s.trend>=0?<TrendingUp className="trend-up" size={18}/>:<TrendingDown className="trend-down" size={18}/>}</td>
-          <td><div className="row-actions"><button onClick={()=>editSupplier(s)}><Edit3/></button><button className="danger" onClick={()=>deleteSupplier(s)}><Trash2/></button></div></td>
+          <td><div className="row-actions"><button onClick={()=>editSupplier(s)}><Edit3/></button><RowMergeButton entity="SUPPLIERS" source={s}/><button className="danger" onClick={()=>deleteSupplier(s)}><Trash2/></button></div></td>
         </tr>)}
         </tbody></table>
       </div>
@@ -129,7 +172,7 @@ export function SupplierPage(){
         <div className="budget-modal-head"><div><h3>Add Supplier</h3><p>Create supplier master data. KPI and contract values are calculated from transactions.</p></div><button onClick={()=>setOpen(false)}><X/></button></div>
         <form onSubmit={submit}>
           <div className="budget-form-grid">
-            <label>Supplier code<input required value={form.code} onChange={e=>setForm({...form,code:e.target.value})} placeholder="SUP-003"/></label>
+            
             <label>Supplier name<input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/></label>
             <label>Tax code<input value={form.taxCode} onChange={e=>setForm({...form,taxCode:e.target.value})}/></label>
             <label>Category<input value={form.category} onChange={e=>setForm({...form,category:e.target.value})}/></label>
@@ -139,7 +182,29 @@ export function SupplierPage(){
             <label>Status<select value={form.status} onChange={e=>setForm({...form,status:e.target.value})}><option>ACTIVE</option><option>QUALIFIED</option><option>SUSPENDED</option><option>INACTIVE</option></select></label>
           </div>
           <label>Address<input value={form.address} onChange={e=>setForm({...form,address:e.target.value})}/></label>
-          <div className="budget-modal-actions"><button type="button" className="secondary" onClick={()=>setOpen(false)}>Cancel</button><button className="budget-primary" disabled={saving}>{saving?'Saving...':'Add Supplier'}</button></div>
+          <div className="supplier-profile-sections">
+<h4>Company Information</h4><div className="budget-form-grid">
+<label>Company / Legal Name<input value={form.companyName} onChange={e=>setForm({...form,companyName:e.target.value})}/></label>
+<label>Short Name<input value={form.shortName} onChange={e=>setForm({...form,shortName:e.target.value})}/></label>
+<label>Website<input value={form.website} onChange={e=>setForm({...form,website:e.target.value})} placeholder="https://..."/></label>
+<label>Business Registration No.<input value={form.businessRegistrationNo} onChange={e=>setForm({...form,businessRegistrationNo:e.target.value})}/></label>
+<label>Legal Representative<input value={form.legalRepresentative} onChange={e=>setForm({...form,legalRepresentative:e.target.value})}/></label>
+<label>Registration Date<input type="date" value={form.registrationDate} onChange={e=>setForm({...form,registrationDate:e.target.value})}/></label>
+<label>Country<input value={form.country} onChange={e=>setForm({...form,country:e.target.value})}/></label>
+<label>Province / City<input value={form.provinceCity} onChange={e=>setForm({...form,provinceCity:e.target.value})}/></label>
+</div><h4>Contact Information</h4><div className="budget-form-grid">
+<label>Contact Position<input value={form.contactPosition} onChange={e=>setForm({...form,contactPosition:e.target.value})}/></label>
+<label>Alternative Phone<input value={form.alternativePhone} onChange={e=>setForm({...form,alternativePhone:e.target.value})}/></label>
+</div><h4>Commercial & Banking</h4><div className="budget-form-grid">
+<label>Payment Terms<input value={form.paymentTerms} onChange={e=>setForm({...form,paymentTerms:e.target.value})}/></label>
+<label>Currency<select value={form.currency} onChange={e=>setForm({...form,currency:e.target.value})}><option>VND</option><option>USD</option><option>EUR</option></select></label>
+<label>Bank Name<input value={form.bankName} onChange={e=>setForm({...form,bankName:e.target.value})}/></label>
+<label>Bank Account No.<input value={form.bankAccountNo} onChange={e=>setForm({...form,bankAccountNo:e.target.value})}/></label>
+<label>Bank Account Name<input value={form.bankAccountName} onChange={e=>setForm({...form,bankAccountName:e.target.value})}/></label>
+<label>Bank Branch<input value={form.bankBranch} onChange={e=>setForm({...form,bankBranch:e.target.value})}/></label>
+<label className="supplier-span-2">Notes<textarea rows={3} value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})}/></label>
+</div></div><SupplierProfileFiles pendingFiles={profileFiles} onPendingFiles={setProfileFiles}/>
+   <div className="budget-modal-actions"><button type="button" className="secondary" onClick={()=>setOpen(false)}>Cancel</button><button className="budget-primary" disabled={saving}>{saving?'Saving...':'Add Supplier'}</button></div>
         </form>
       </div>
     </div>}

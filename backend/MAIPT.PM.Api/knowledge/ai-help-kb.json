@@ -1,0 +1,322 @@
+[
+  {
+    "id": "projects-create",
+    "title": "Create a new Project",
+    "intent": "projects",
+    "keywords": [
+      "project",
+      "projects",
+      "new project",
+      "create project",
+      "add project",
+      "tạo project",
+      "tao project",
+      "thêm project",
+      "them project",
+      "tạo dự án",
+      "tao du an",
+      "dự án",
+      "du an"
+    ],
+    "answer": "Go to Planning → Projects, select New Project, complete the required project information, choose the relevant Business Unit/Portfolio/Owner where applicable, then select Save."
+  },
+  {
+    "id": "performance-kpi",
+    "title": "Performance & KPI",
+    "intent": "performance",
+    "keywords": [
+      "performance",
+      "kpi",
+      "performance & kpi",
+      "team performance",
+      "monthly kpi",
+      "nhập performance",
+      "nhap performance",
+      "performance ở đâu",
+      "performance o dau",
+      "nhập kpi",
+      "nhap kpi",
+      "kpi ở đâu",
+      "kpi o dau",
+      "đánh giá hiệu suất",
+      "danh gia hieu suat"
+    ],
+    "answer": "Go to Performance & KPI. Use the relevant period and employee/project scope, then add or import KPI/Performance data using the actions available on that screen."
+  },
+  {
+    "id": "budget-plan",
+    "title": "Annual Work & Budget Plan",
+    "intent": "budgetPlan",
+    "keywords": [
+      "budget",
+      "budget plan",
+      "annual work",
+      "annual work & budget plan",
+      "import budget",
+      "budget import",
+      "ngân sách",
+      "ngan sach",
+      "kế hoạch ngân sách",
+      "ke hoach ngan sach",
+      "nhập budget",
+      "nhap budget"
+    ],
+    "answer": "Go to Planning → Annual Work & Budget Plan. Select the required year, then use New or Import depending on how you want to enter the plan."
+  },
+  {
+    "id": "contracts-create",
+    "title": "Create Contract",
+    "intent": "contracts",
+    "keywords": [
+      "contract",
+      "contracts",
+      "new contract",
+      "create contract",
+      "add contract",
+      "hợp đồng",
+      "hop dong",
+      "tạo hợp đồng",
+      "tao hop dong",
+      "nhập contract",
+      "nhap contract"
+    ],
+    "answer": "Go to Financial Control → Contracts, select New Contract, choose an active Project and Supplier, complete the required contract information, then select Save Contract."
+  },
+  {
+    "id": "supplier-create",
+    "title": "Create Supplier",
+    "intent": "suppliers",
+    "keywords": [
+      "supplier",
+      "suppliers",
+      "new supplier",
+      "create supplier",
+      "add supplier",
+      "nhà cung cấp",
+      "nha cung cap",
+      "tạo supplier",
+      "tao supplier",
+      "nhập supplier",
+      "nhap supplier",
+      "thêm supplier",
+      "them supplier"
+    ],
+    "answer": "Go to Supplier Management, select Add Supplier, enter Supplier Name, Company/Legal Name, Tax Code, Website, Contact Person, Email, Phone, Address and other profile information as needed, then select Add Supplier."
+  },
+  {
+    "id": "it-assets",
+    "title": "IT Assets & Services",
+    "intent": "itAssets",
+    "keywords": [
+      "it asset",
+      "asset",
+      "device",
+      "laptop",
+      "desktop",
+      "server",
+      "network",
+      "thiết bị",
+      "thiet bi"
+    ],
+    "answer": "Go to ORGANIZATION → IT Assets & Services to manage laptops, desktops, servers, network equipment and other IT resources. Record Business Unit, assignment and lifecycle details. Visibility follows the user's permitted Business Unit/Data Scope."
+  },
+  {
+    "id": "licenses",
+    "title": "IT Licenses",
+    "intent": "itAssets",
+    "keywords": [
+      "license",
+      "licenses",
+      "software license",
+      "bản quyền",
+      "ban quyen"
+    ],
+    "answer": "In ORGANIZATION → IT Assets & Services, open Licenses. Add product/license details, Business Unit, assigned user or installed device where applicable, supplier/contract and validity dates, then Save."
+  },
+  {
+    "id": "domains",
+    "title": "Domain Management",
+    "intent": "itAssets",
+    "keywords": [
+      "domain",
+      "domains",
+      "tên miền",
+      "ten mien",
+      "registrar",
+      "renewal"
+    ],
+    "answer": "In ORGANIZATION → IT Assets & Services, open Domains. Enter Domain Name, type, Business Unit, manager, registrar, supplier/contract if applicable, registration/expiry and renewal information, then Save."
+  },
+  {
+    "id": "permissions",
+    "title": "Functional Permissions and Data Scope",
+    "intent": "accessControl",
+    "keywords": [
+      "permission",
+      "functional permission",
+      "data scope",
+      "quyền",
+      "quyen",
+      "phạm vi dữ liệu",
+      "pham vi du lieu"
+    ],
+    "answer": "Functional Permissions control what actions and modules a user can use. Data Scope controls which Projects, Business Units and domain data the user can see. A user may have multiple Business Units and Projects. If a function is visible but data is missing, check Data Scope; if the function is unavailable, check Functional Permissions."
+  },
+  {
+    "id": "delete",
+    "title": "Delete / Deactivate",
+    "intent": "generic",
+    "keywords": [
+      "delete",
+      "deactivate",
+      "deactivated",
+      "xóa",
+      "xoa",
+      "xoá",
+      "đã xóa",
+      "da xoa"
+    ],
+    "answer": "Deleted items may be stored as Deactivated for audit purposes. Deactivated items are treated as deleted and should not appear in normal lists or dropdown selections."
+  },
+  {
+    "id": "projects",
+    "title": "Projects",
+    "intent": "projects",
+    "keywords": [
+      "project",
+      "projects",
+      "dự án",
+      "du an",
+      "create project",
+      "business unit",
+      "portfolio"
+    ],
+    "answer": "Go to PLANNING → Projects. Create or edit the project, select its Portfolio and Business Unit information, complete the project details and Save. A project may be associated with multiple Business Units where configured."
+  },
+  {
+    "id": "budget",
+    "title": "Budget Control and Import",
+    "intent": "budget",
+    "keywords": [
+      "budget",
+      "import budget",
+      "ngân sách",
+      "ngan sach",
+      "excel"
+    ],
+    "answer": "Go to FINANCIAL CONTROL → Budget Control. Use Import to load the Excel template or Export to download data/template. Imported rows must use project and Business Unit information permitted by your Data Scope. MPMS shows processing status during import."
+  },
+  {
+    "id": "contracts",
+    "title": "Contracts",
+    "intent": "contracts",
+    "keywords": [
+      "contract",
+      "contracts",
+      "hợp đồng",
+      "hop dong"
+    ],
+    "answer": "Go to FINANCIAL CONTROL → Contracts. Add the contract, select the related project and supplier where applicable, enter values, dates and required information, attach supporting documents when available, then Save."
+  },
+  {
+    "id": "suppliers",
+    "title": "Suppliers",
+    "intent": "suppliers",
+    "keywords": [
+      "supplier",
+      "suppliers",
+      "vendor",
+      "nhà cung cấp",
+      "nha cung cap"
+    ],
+    "answer": "Go to FINANCIAL CONTROL → Suppliers to create and maintain supplier records. Supplier information is reused by Contracts and relevant IT Asset/Service records."
+  },
+  {
+    "id": "kpi",
+    "title": "Performance & KPI",
+    "intent": "teamPerformance",
+    "keywords": [
+      "kpi",
+      "performance",
+      "performance & kpi",
+      "hiệu suất",
+      "hieu suat"
+    ],
+    "answer": "Go to PERFORMANCE → Performance & KPI. Review or enter KPI information for the permitted period and scope. Personal/OWN KPI is visible to its owner where applicable; broader team data depends on Functional Permissions and Data Scope."
+  },
+  {
+    "id": "asset-handover",
+    "title": "IT Asset Assignment and Handover",
+    "intent": "itAssets",
+    "keywords": [
+      "handover",
+      "assign asset",
+      "return asset",
+      "giao tài sản",
+      "giao tai san",
+      "biên bản",
+      "bien ban",
+      "thu hồi",
+      "thu hoi"
+    ],
+    "answer": "In IT Assets & Services, select the asset and use assignment/handover to record the recipient and handover information. Attach the handover document where available. Record returns so the asset can be stored and reassigned while preserving history."
+  },
+  {
+    "id": "personal-fc",
+    "title": "Personal FC",
+    "intent": "personalFc",
+    "keywords": [
+      "personal fc",
+      "personal finance",
+      "fc"
+    ],
+    "answer": "Go to FINANCIAL CONTROL → Personal FC to create, review and maintain Personal FC records available to your account and permitted scope."
+  },
+  {
+    "id": "import-export",
+    "title": "Import and Export",
+    "intent": "generic",
+    "keywords": [
+      "import",
+      "export",
+      "excel",
+      "template",
+      "mẫu import",
+      "mau import",
+      "xuất excel",
+      "xuat excel"
+    ],
+    "answer": "Use Import or Export in the relevant module. Import shows a processing indicator while the file is handled. If you have Export permission but there is no data in your permitted scope, Export should still provide a valid empty Excel template where the module supports import/export."
+  },
+  {
+    "id": "documents",
+    "title": "Documents and Attachments",
+    "intent": "documents",
+    "keywords": [
+      "document",
+      "attachment",
+      "sharepoint",
+      "tài liệu",
+      "tai lieu",
+      "đính kèm",
+      "dinh kem"
+    ],
+    "answer": "Use the document or attachment controls in the relevant MPMS record. Files may be stored through the configured Microsoft 365/SharePoint document storage. Use Preview/Open where supported."
+  },
+  {
+    "id": "club",
+    "title": "Club Management",
+    "intent": "club",
+    "keywords": [
+      "club",
+      "club members",
+      "tournament",
+      "teams",
+      "matches",
+      "standings",
+      "giải đấu",
+      "giai dau"
+    ],
+    "answer": "Use enabled Club functions to maintain Club Members and profile information, organize Tournaments, Teams and Matches, and review Standings and related club information."
+  }
+]

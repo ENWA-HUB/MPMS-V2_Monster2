@@ -7,10 +7,20 @@ namespace MAIPT.PM.Api.Endpoints;
 
 public static class SettingsEndpoints
 {
-    static bool CanManage(HttpContext h) =>
-        AuthService.IsManagerRole(Convert.ToString(h.Items["AuthUserRole"]));
+    static bool CanManage(HttpContext h) => h.Items.ContainsKey("AuthUserId");
 
-    static string NewTemporaryPassword() => "Bitexco@123";
+    // A caller may only manage the login of an account strictly below their own
+    // privilege rank (ROOT may manage anyone). Returns true when the action is allowed.
+    static bool CanManageTargetLogin(HttpContext h, AppUser target)
+    {
+        var role = Convert.ToString(h.Items["AuthUserRole"]);
+        if (string.Equals(role, "ROOT", StringComparison.OrdinalIgnoreCase)) return true;
+        var callerId = h.Items.TryGetValue("AuthUserId", out var v) ? Convert.ToInt64(v) : 0;
+        if (callerId == target.Id) return true;
+        return AuthService.RoleRank(target.Role) < AuthService.RoleRank(role);
+    }
+
+    static string NewTemporaryPassword() => AuthService.CreateTemporaryPassword();
 
     static async Task RevokeSessions(long userId, AppDbContext db)
     {
@@ -26,7 +36,7 @@ public static class SettingsEndpoints
     {
         // ---------------- Portfolios ----------------
         app.MapGet("/api/settings/portfolios", async (AppDbContext db) =>
-            Results.Ok(await db.Portfolios.AsNoTracking()
+            Results.Ok(await db.Portfolios.AsNoTracking().Where(x=>x.Status!="DEACTIVATED" && x.Status!="DELETED")
                 .Include(x => x.OrgUnit)
                 .Include(x => x.Owner)
                 .OrderBy(x => x.Name)
@@ -78,55 +88,18 @@ public static class SettingsEndpoints
         });
 
         // ---------------- Business Units ----------------
-        app.MapGet("/api/settings/org-units", async (AppDbContext db) =>
-            Results.Ok(await db.OrgUnits.AsNoTracking().OrderBy(x => x.Name)
-                .Select(x => new
-                {
-                    x.Id, x.Code, x.Name, x.Type, x.ParentId, x.Status,
-                    UserCount = db.Users.Count(u => u.OrgUnitId == x.Id),
-                    PortfolioCount = db.Portfolios.Count(p => p.OrgUnitId == x.Id),
-                    ProjectCount = db.Projects.Count(p => p.OrgUnitId == x.Id)
-                }).ToListAsync()));
+        app.MapGet("/api/settings/org-units", async (AppDbContext db) => Results.Ok(await db.OrgUnits.AsNoTracking().Where(x=>x.Status!="DEACTIVATED" && x.Status!="DELETED").OrderBy(x=>x.Name).Select(x=>new{
+            x.Id,x.Code,x.Name,x.Type,x.ParentId,x.Status,x.ShortName,x.InternationalName,x.Description,x.LegalType,x.TaxCode,x.TaxIssueDate,x.RegistrationNo,x.RegistrationIssueDate,x.IncorporationDate,x.LegalRepresentative,x.RepresentativeTitle,x.RegisteredAddress,x.OfficeAddress,x.Phone,x.Email,x.Website,x.HeadName,x.FinanceContact,x.ITContact,x.HRContact,x.DefaultCurrency,x.FiscalYear,x.CostCenter,x.CompanyCode,
+            UserCount=db.Users.Count(u=>u.OrgUnitId==x.Id),PortfolioCount=db.Portfolios.Count(p=>p.OrgUnitId==x.Id),ProjectCount=db.Projects.Count(p=>p.OrgUnitId==x.Id)}).ToListAsync()));
 
-        app.MapPost("/api/settings/org-units", async (OrgUnit x, HttpContext h, AppDbContext db) =>
-        {
-            if (!CanManage(h)) return Results.Forbid();
-            x.Code=(x.Code??"").Trim().ToUpperInvariant();
-            x.Name=(x.Name??"").Trim();
-            if (x.Code=="" || x.Name=="") return Results.BadRequest("Code and Name are required.");
-            if (await db.OrgUnits.AnyAsync(a => a.Code == x.Code))
-                return Results.BadRequest("Business Unit code already exists.");
-            db.OrgUnits.Add(x);
-            await db.SaveChangesAsync();
-            return Results.Ok(x);
-        });
+        app.MapPost("/api/settings/org-units", async (OrgUnit x,HttpContext h,AppDbContext db)=>{if(!CanManage(h))return Results.Forbid();x.Code=(x.Code??"").Trim().ToUpperInvariant();x.Name=(x.Name??"").Trim();x.Type=string.IsNullOrWhiteSpace(x.Type)?"SBU":x.Type.Trim().ToUpperInvariant();if(x.Code==""||x.Name=="")return Results.BadRequest("Code and Name are required.");if(await db.OrgUnits.AnyAsync(a=>a.Code==x.Code))return Results.BadRequest("Business Unit code already exists.");db.OrgUnits.Add(x);await db.SaveChangesAsync();return Results.Ok(x);});
 
-        app.MapPut("/api/settings/org-units/{id:long}", async (long id, OrgUnit x, HttpContext h, AppDbContext db) =>
-        {
-            if (!CanManage(h)) return Results.Forbid();
-            var r=await db.OrgUnits.FindAsync(id);
-            if (r is null) return Results.NotFound();
-            var code=(x.Code??"").Trim().ToUpperInvariant();
-            if (await db.OrgUnits.AnyAsync(a=>a.Id!=id && a.Code==code))
-                return Results.BadRequest("Business Unit code already exists.");
-            r.Code=code; r.Name=(x.Name??"").Trim(); r.Type=x.Type; r.ParentId=x.ParentId; r.Status=x.Status;
-            await db.SaveChangesAsync();
-            return Results.Ok(r);
-        });
+        app.MapPut("/api/settings/org-units/{id:long}", async (long id,OrgUnit x,HttpContext h,AppDbContext db)=>{if(!CanManage(h))return Results.Forbid();var r=await db.OrgUnits.FindAsync(id);if(r is null)return Results.NotFound();var oldCode=r.Code;var code=(x.Code??"").Trim().ToUpperInvariant();if(await db.OrgUnits.AnyAsync(a=>a.Id!=id&&a.Code==code))return Results.BadRequest("Business Unit code already exists.");
+            r.Code=code;r.Name=(x.Name??"").Trim();r.Type=string.IsNullOrWhiteSpace(x.Type)?r.Type:x.Type.Trim().ToUpperInvariant();r.ParentId=x.ParentId;r.Status=x.Status;
+            r.ShortName=x.ShortName;r.InternationalName=x.InternationalName;r.Description=x.Description;r.LegalType=x.LegalType;r.TaxCode=x.TaxCode;r.TaxIssueDate=x.TaxIssueDate;r.RegistrationNo=x.RegistrationNo;r.RegistrationIssueDate=x.RegistrationIssueDate;r.IncorporationDate=x.IncorporationDate;r.LegalRepresentative=x.LegalRepresentative;r.RepresentativeTitle=x.RepresentativeTitle;r.RegisteredAddress=x.RegisteredAddress;r.OfficeAddress=x.OfficeAddress;r.Phone=x.Phone;r.Email=x.Email;r.Website=x.Website;r.HeadName=x.HeadName;r.FinanceContact=x.FinanceContact;r.ITContact=x.ITContact;r.HRContact=x.HRContact;r.DefaultCurrency=x.DefaultCurrency;r.FiscalYear=x.FiscalYear;r.CostCenter=x.CostCenter;r.CompanyCode=x.CompanyCode;
+            if(!string.Equals(oldCode,r.Code,StringComparison.OrdinalIgnoreCase))await CodePropagationService.PropagateOrgUnitCodeAsync(db,oldCode,r.Code);await db.SaveChangesAsync();return Results.Ok(r);});
 
-        app.MapDelete("/api/settings/org-units/{id:long}", async (long id, HttpContext h, AppDbContext db) =>
-        {
-            if (!CanManage(h)) return Results.Forbid();
-            var r=await db.OrgUnits.FindAsync(id);
-            if (r is null) return Results.NotFound();
-            var n=await db.Users.CountAsync(x=>x.OrgUnitId==id)
-                + await db.Portfolios.CountAsync(x=>x.OrgUnitId==id)
-                + await db.Projects.CountAsync(x=>x.OrgUnitId==id);
-            if (n>0) return Results.BadRequest("Cannot delete: this Business Unit is in use. Set INACTIVE instead.");
-            db.OrgUnits.Remove(r);
-            await db.SaveChangesAsync();
-            return Results.NoContent();
-        });
+        app.MapDelete("/api/settings/org-units/{id:long}", async (long id,HttpContext h,AppDbContext db)=>{if(!CanManage(h))return Results.Forbid();var r=await db.OrgUnits.FindAsync(id);if(r is null)return Results.NotFound();var n=await db.Users.CountAsync(x=>x.OrgUnitId==id)+await db.Portfolios.CountAsync(x=>x.OrgUnitId==id)+await db.Projects.CountAsync(x=>x.OrgUnitId==id);if(n>0)return Results.BadRequest("Cannot delete: this Business Unit is in use. Set INACTIVE instead.");db.OrgUnits.Remove(r);await db.SaveChangesAsync();return Results.NoContent();});
 
         // ---------------- Team Members ----------------
         app.MapGet("/api/settings/team-members", async (AppDbContext db) =>
@@ -197,6 +170,7 @@ public static class SettingsEndpoints
             if (!CanManage(h)) return Results.Forbid();
             var user=await db.Users.FindAsync(id);
             if (user is null) return Results.NotFound();
+            if (!CanManageTargetLogin(h, user)) return Results.Forbid();
             if (string.IsNullOrWhiteSpace(user.Email)) return Results.BadRequest("Member email is required before creating a login.");
             if (await db.AuthAccounts.AnyAsync(x=>x.UserId==id))
                 return Results.BadRequest("This member already has a login. Use Reset Login.");
@@ -227,6 +201,7 @@ public static class SettingsEndpoints
             if (!CanManage(h)) return Results.Forbid();
             var user=await db.Users.FindAsync(id);
             if (user is null) return Results.NotFound();
+            if (!CanManageTargetLogin(h, user)) return Results.Forbid();
             var account=await db.AuthAccounts.FirstOrDefaultAsync(x=>x.UserId==id);
             if (account is null) return Results.BadRequest("This member has no login. Use Create Login.");
 
@@ -252,6 +227,9 @@ public static class SettingsEndpoints
         app.MapPost("/api/settings/team-members/{id:long}/login/toggle", async (long id, LoginToggleRequest input, HttpContext h, AppDbContext db) =>
         {
             if (!CanManage(h)) return Results.Forbid();
+            var target=await db.Users.FindAsync(id);
+            if (target is null) return Results.NotFound();
+            if (!CanManageTargetLogin(h, target)) return Results.Forbid();
             var account=await db.AuthAccounts.FirstOrDefaultAsync(x=>x.UserId==id);
             if (account is null) return Results.BadRequest("This member has no login.");
             account.IsEnabled=input.IsEnabled;
@@ -321,7 +299,7 @@ public static class SettingsEndpoints
         app.MapGet("/api/settings/options", async (AppDbContext db) =>
             Results.Ok(new
             {
-                orgUnits=await db.OrgUnits.AsNoTracking().OrderBy(x=>x.Name)
+                orgUnits=await db.OrgUnits.AsNoTracking().Where(x=>x.Status!="DEACTIVATED" && x.Status!="DELETED").OrderBy(x=>x.Name)
                     .Select(x=>new{x.Id,x.Code,x.Name,x.Status}).ToListAsync(),
                 users=await db.Users.AsNoTracking().OrderBy(x=>x.Name)
                     .Select(x=>new{x.Id,x.Name,x.Email,x.Status}).ToListAsync(),

@@ -5,9 +5,9 @@ type OrgUnit={id:number;code:string;name:string;status:string};
 type Category={id:number;code:string;name:string;scope:string;status:string};
 type Options={orgUnits:OrgUnit[];categories?:Category[]};
 
-export function BusinessUnitSelect({value,onChange,required=true}:{value:string;onChange:(value:string)=>void;required?:boolean}){
+export function BusinessUnitSelect({value,onChange,required=true,module}:{value:string;onChange:(value:string)=>void;required?:boolean;module?:string}){
  const [options,setOptions]=useState<Options>({orgUnits:[]});
- useEffect(()=>{getJson<Options>('/settings/options').then(setOptions).catch(()=>{})},[]);
+ useEffect(()=>{const path=module?`/scope/options/${encodeURIComponent(module)}`:'/settings/options';getJson<Options>(path).then(setOptions).catch(()=>setOptions({orgUnits:[]}))},[module]);
  const rows=useMemo(()=>options.orgUnits.filter(x=>x.status==='ACTIVE'),[options]);
  return <select required={required} value={value||''} onChange={e=>onChange(e.target.value)}>
   <option value="">Select Business Unit</option>

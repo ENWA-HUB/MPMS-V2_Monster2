@@ -5,11 +5,32 @@ namespace MAIPT.PM.Api.Data;
 
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
+    public DbSet<PersonalFcClubProfile> PersonalFcClubProfiles => Set<PersonalFcClubProfile>();
+
+    public DbSet<PersonalFcTournament> PersonalFcTournaments => Set<PersonalFcTournament>();
+    public DbSet<PersonalFcTournamentRegistration> PersonalFcTournamentRegistrations => Set<PersonalFcTournamentRegistration>();
+    public DbSet<PersonalFcTournamentTeam> PersonalFcTournamentTeams => Set<PersonalFcTournamentTeam>();
+    public DbSet<PersonalFcTournamentMatch> PersonalFcTournamentMatches => Set<PersonalFcTournamentMatch>();
+
+    public DbSet<PersonalFcCategory> PersonalFcCategories => Set<PersonalFcCategory>();
+    public DbSet<PersonalFcAccount> PersonalFcAccounts => Set<PersonalFcAccount>();
+    public DbSet<PersonalFcTransaction> PersonalFcTransactions => Set<PersonalFcTransaction>();
+    public DbSet<PersonalFcAsset> PersonalFcAssets => Set<PersonalFcAsset>();
+    public DbSet<PersonalFcDebt> PersonalFcDebts => Set<PersonalFcDebt>();
+    public DbSet<PersonalFcClub> PersonalFcClubs => Set<PersonalFcClub>();
+    public DbSet<PersonalFcClubMember> PersonalFcClubMembers => Set<PersonalFcClubMember>();
+    public DbSet<PersonalFcClubFund> PersonalFcClubFunds => Set<PersonalFcClubFund>();
+    public DbSet<PersonalFcClubTransaction> PersonalFcClubTransactions => Set<PersonalFcClubTransaction>();
+    public DbSet<PersonalFcClubSponsor> PersonalFcClubSponsors => Set<PersonalFcClubSponsor>();
+    public DbSet<PersonalFcClubEvent> PersonalFcClubEvents => Set<PersonalFcClubEvent>();
+
+    public DbSet<ITDomain> ITDomains => Set<ITDomain>();
     public DbSet<OrgUnit> OrgUnits => Set<OrgUnit>();
     public DbSet<AppUser> Users => Set<AppUser>();
     public DbSet<MasterCategory> Categories => Set<MasterCategory>();
     public DbSet<Portfolio> Portfolios => Set<Portfolio>();
     public DbSet<Project> Projects => Set<Project>();
+    public DbSet<ProjectOrgUnit> ProjectOrgUnits => Set<ProjectOrgUnit>();
     public DbSet<ProjectMember> ProjectMembers => Set<ProjectMember>();
     public DbSet<Milestone> Milestones => Set<Milestone>();
     public DbSet<ProjectTask> Tasks => Set<ProjectTask>();
@@ -34,6 +55,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<PerformanceItem> PerformanceItems => Set<PerformanceItem>();
     public DbSet<AuthAccount> AuthAccounts => Set<AuthAccount>();
     public DbSet<AuthSession> AuthSessions => Set<AuthSession>();
+    public DbSet<ITAsset> ITAssets => Set<ITAsset>();
+    public DbSet<ITAssetAssignment> ITAssetAssignments => Set<ITAssetAssignment>();
+    public DbSet<ITLicense> ITLicenses => Set<ITLicense>();
+    public DbSet<ITService> ITServices => Set<ITService>();
+    public DbSet<ITMaintenance> ITMaintenances => Set<ITMaintenance>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -45,6 +71,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         b.Entity<Project>().HasIndex(x => new { x.OrgUnitId, x.Code }).IsUnique();
         b.Entity<Project>().HasIndex(x => x.Status);
         b.Entity<Project>().HasIndex(x => x.PortfolioId);
+        b.Entity<ProjectOrgUnit>().HasIndex(x => new { x.ProjectId, x.OrgUnitId }).IsUnique();
+        b.Entity<ProjectOrgUnit>().HasIndex(x => new { x.OrgUnitId, x.ProjectId });
         b.Entity<ProjectMember>().HasIndex(x => new { x.ProjectId, x.UserId }).IsUnique();
         b.Entity<ProjectTask>().HasIndex(x => new { x.ProjectId, x.Status, x.DueDate });
         b.Entity<Risk>().HasIndex(x => new { x.ProjectId, x.Status, x.SeverityScore });
@@ -68,6 +96,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         b.Entity<AuthAccount>().HasIndex(x => x.UserId).IsUnique();
         b.Entity<AuthSession>().HasIndex(x => x.TokenHash).IsUnique();
         b.Entity<AuthSession>().HasIndex(x => new { x.UserId, x.ExpiresAt });
+        b.Entity<ITAsset>().HasIndex(x=>x.AssetCode).IsUnique();
+        b.Entity<ITAsset>().HasIndex(x=>new{x.Status,x.Category});
+        b.Entity<ITAssetAssignment>().HasIndex(x=>new{x.AssetId,x.Status});
+        b.Entity<ITAssetAssignment>().HasIndex(x=>new{x.UserId,x.Status});
+        b.Entity<ITLicense>().HasIndex(x=>x.Code).IsUnique();
+        b.Entity<ITService>().HasIndex(x=>x.Code).IsUnique();
+        b.Entity<ITMaintenance>().HasIndex(x=>new{x.AssetId,x.Status});
 
         b.Entity<Project>()
             .HasOne(x => x.Owner).WithMany().HasForeignKey(x => x.OwnerId).OnDelete(DeleteBehavior.Restrict);

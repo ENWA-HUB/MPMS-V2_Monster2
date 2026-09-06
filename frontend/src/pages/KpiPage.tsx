@@ -5,6 +5,12 @@ import { deleteJson, getJson, postJson, putJson } from '../lib/api';
 type Criteria={id:number;code:string;name:string;weightPct:number;version:number};type Evaluation={id:number;supplier:string;project:string;periodType:string;periodStart:string;periodEnd:string;overallScore:number;rating:string;status:string};type Supplier={id:number;name:string};type Project={id:number;name:string};
 const nice=(s:string)=>s.toLowerCase().replaceAll('_',' ').replace(/\b\w/g,c=>c.toUpperCase());
 export function KpiPage(){
+ const [canDownloadKpi,setCanDownloadKpi]=useState(false);
+ useEffect(()=>{getJson<any>('/access/me').then(a=>{
+   const p=a?.permissions?.KPI||[];
+   setCanDownloadKpi(p.includes('DOWNLOAD'));
+ }).catch(()=>setCanDownloadKpi(false))},[]);
+
  const [criteria,setCriteria]=useState<Criteria[]>([]),[evaluations,setEvaluations]=useState<Evaluation[]>([]),[suppliers,setSuppliers]=useState<Supplier[]>([]),[projects,setProjects]=useState<Project[]>([]),[open,setOpen]=useState(false),[saving,setSaving]=useState(false),[error,setError]=useState('');const [form,setForm]=useState({supplierId:'',projectId:'',periodType:'QUARTER',periodStart:'',periodEnd:'',evaluatorId:'1',status:'SUBMITTED'});const [scores,setScores]=useState<Record<number,string>>({});
  const load=async()=>{const [c,e,s,p]=await Promise.all([getJson<Criteria[]>('/kpi/criteria'),getJson<Evaluation[]>('/kpi/evaluations'),getJson<Supplier[]>('/suppliers'),getJson<Project[]>('/projects')]);setCriteria(c);setEvaluations(e);setSuppliers(s);setProjects(p);setScores(Object.fromEntries(c.map(x=>[x.id,'3'])))};
  useEffect(()=>{load().catch(e=>setError(String(e)))},[]);const total=useMemo(()=>criteria.reduce((a,b)=>a+b.weightPct,0),[criteria]);

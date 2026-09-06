@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <location path="." inheritInChildApplications="false">
+    <system.webServer>
+      <handlers>
+        <add name="aspNetCore" path="*" verb="*" modules="AspNetCoreModuleV2" resourceType="Unspecified" />
+      </handlers>
+      <aspNetCore processPath="dotnet"
+                  arguments=".\MAIPT.PM.Api.dll"
+                  stdoutLogEnabled="false"
+                  hostingModel="inprocess">
+        <environmentVariables>
+          <!-- Copy this file to web.config on the server only. Never commit real values. -->
+          <environmentVariable name="DB_PROVIDER" value="sqlserver" />
+          <environmentVariable name="MPMS_SQLSERVER_CONNECTION_STRING" value="Server=SERVER;Database=DATABASE;User Id=USER;Password=REPLACE_ON_SERVER;Encrypt=True;TrustServerCertificate=False" />
+          <environmentVariable name="MPMS_M365_ENABLED" value="true" />
+          <environmentVariable name="MPMS_M365_TENANT_ID" value="REPLACE_ON_SERVER" />
+          <environmentVariable name="MPMS_M365_CLIENT_ID" value="REPLACE_ON_SERVER" />
+          <environmentVariable name="MPMS_M365_CLIENT_SECRET" value="REPLACE_ON_SERVER" />
+          <environmentVariable name="MPMS_M365_DRIVE_ID" value="REPLACE_ON_SERVER" />
+        </environmentVariables>
+      </aspNetCore>
+    </system.webServer>
+  </location>
+</configuration>

@@ -12,7 +12,6 @@ public static class AdminAccountEndpoints
     private const int PasswordIterations = 120000;
     private const int SaltBytes = 24;
     private const int HashBytes = 32;
-    private const string DefaultTemporaryPassword = "Bitexco@123";
 
     private static async Task<AppUser?> CurrentUser(HttpContext http, AppDbContext db)
     {
@@ -76,13 +75,13 @@ public static class AdminAccountEndpoints
             {
                 var admin = await CurrentUser(http, db);
                 if (admin is null) return Results.Unauthorized();
-                if (!RbacService.IsAdmin(admin)) return Results.Forbid();
+                if (!await RbacService.CanAsync(db, admin, "ACCESS_CONTROL", "EDIT")) return Results.Forbid();
 
                 var user = await db.Users.FirstOrDefaultAsync(x => x.Id == id);
                 if (user is null) return Results.NotFound(new { message = "User not found." });
 
                 var password = string.IsNullOrWhiteSpace(input?.TemporaryPassword)
-                    ? DefaultTemporaryPassword
+                    ? AuthService.CreateTemporaryPassword()
                     : input!.TemporaryPassword!.Trim();
 
                 if (password.Length < 8)
@@ -106,7 +105,7 @@ public static class AdminAccountEndpoints
             {
                 var admin = await CurrentUser(http, db);
                 if (admin is null) return Results.Unauthorized();
-                if (!RbacService.IsAdmin(admin)) return Results.Forbid();
+                if (!await RbacService.CanAsync(db, admin, "ACCESS_CONTROL", "EDIT")) return Results.Forbid();
 
                 var existingUserIds = await db.AuthAccounts.AsNoTracking()
                     .Select(x => x.UserId)
@@ -117,15 +116,20 @@ public static class AdminAccountEndpoints
                     .OrderBy(x => x.Name)
                     .ToListAsync();
 
+                var credentials=new List<object>();
                 foreach (var user in users)
-                    await UpsertAccount(db, user, DefaultTemporaryPassword);
+                {
+                    var password=AuthService.CreateTemporaryPassword();
+                    await UpsertAccount(db,user,password);
+                    credentials.Add(new { user.Id,user.Email,temporaryPassword=password });
+                }
 
                 await db.SaveChangesAsync();
 
                 return Results.Ok(new
                 {
                     created = users.Count,
-                    temporaryPassword = DefaultTemporaryPassword,
+                    credentials,
                     mustChangePassword = true,
                     users = users.Select(x => new { x.Id, x.Name, x.Email })
                 });

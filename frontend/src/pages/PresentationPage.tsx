@@ -11,6 +11,14 @@ const money=(n:number)=>n>=1e9?`${(n/1e9).toFixed(1)}B`:n>=1e6?`${(n/1e6).toFixe
 const pct=(n:number)=>`${Math.round(n)}%`;
 
 export function PresentationPage(){
+ const [canDownloadPresentation,setCanDownloadPresentation]=useState(false);
+ useEffect(()=>{
+   fetch('/api/access/me',{credentials:'same-origin'})
+    .then(r=>r.ok?r.json():null)
+    .then(a=>setCanDownloadPresentation((a?.permissions?.REPORTS||[]).includes('DOWNLOAD')))
+    .catch(()=>setCanDownloadPresentation(false));
+ },[]);
+
  const [dash,setDash]=useState<Dashboard|null>(null);
  const [projects,setProjects]=useState<Project[]>([]);
  const [budget,setBudget]=useState<Budget|null>(null);
@@ -38,7 +46,7 @@ export function PresentationPage(){
  if(!dash||!budget) return <div className="loading">Loading executive presentation...</div>;
  return <div id={rootId} className="presentation-view">
    <div className="page-title presentation-heading"><div><h1>Presentation Mode</h1><p>Full-screen executive portfolio view for management and BOD meetings</p></div>
-    <div className="presentation-actions"><button className="secondary" onClick={exportPdf}><Download size={16}/> Export PDF</button><button className="budget-primary" onClick={toggle}>{full?<Minimize2 size={16}/>:<Maximize2 size={16}/>} {full?'Exit Presentation':'Start Presentation'}</button></div>
+    <div className="presentation-actions">{canDownloadPresentation&&<button className="secondary" onClick={exportPdf}><Download size={16}/> Export PDF</button>}<button className="budget-primary" onClick={toggle}>{full?<Minimize2 size={16}/>:<Maximize2 size={16}/>} {full?'Exit Presentation':'Start Presentation'}</button></div>
    </div>
    <section className="presentation-kpis">
     <Kpi label="Portfolio Budget" value={money(budget.totalBudget)} delta={`${money(budget.totalActual)} spent`} icon={<WalletCards/>}/>

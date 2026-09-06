@@ -1,0 +1,195 @@
+[
+  {
+    "id": "projects-create",
+    "title": "Create a new Project",
+    "intent": "projects",
+    "keywords": [
+      "project",
+      "projects",
+      "new project",
+      "create project",
+      "add project",
+      "tạo project",
+      "tao project",
+      "thêm project",
+      "them project",
+      "tạo dự án",
+      "tao du an",
+      "dự án",
+      "du an"
+    ],
+    "answer": "Go to Planning → Projects, select New Project, complete the required project information, choose the relevant Business Unit/Portfolio/Owner where applicable, then select Save."
+  },
+  {
+    "id": "performance-kpi",
+    "title": "Performance & KPI",
+    "intent": "performance",
+    "keywords": [
+      "performance",
+      "kpi",
+      "performance & kpi",
+      "team performance",
+      "monthly kpi",
+      "nhập performance",
+      "nhap performance",
+      "performance ở đâu",
+      "performance o dau",
+      "nhập kpi",
+      "nhap kpi",
+      "kpi ở đâu",
+      "kpi o dau",
+      "đánh giá hiệu suất",
+      "danh gia hieu suat"
+    ],
+    "answer": "Go to Performance & KPI. Use the relevant period and employee/project scope, then add or import KPI/Performance data using the actions available on that screen."
+  },
+  {
+    "id": "budget-plan",
+    "title": "Annual Work & Budget Plan",
+    "intent": "budgetPlan",
+    "keywords": [
+      "budget",
+      "budget plan",
+      "annual work",
+      "annual work & budget plan",
+      "import budget",
+      "budget import",
+      "ngân sách",
+      "ngan sach",
+      "kế hoạch ngân sách",
+      "ke hoach ngan sach",
+      "nhập budget",
+      "nhap budget"
+    ],
+    "answer": "Go to Planning → Annual Work & Budget Plan. Select the required year, then use New or Import depending on how you want to enter the plan."
+  },
+  {
+    "id": "contracts-create",
+    "title": "Create Contract",
+    "intent": "contracts",
+    "keywords": [
+      "contract",
+      "contracts",
+      "new contract",
+      "create contract",
+      "add contract",
+      "hợp đồng",
+      "hop dong",
+      "tạo hợp đồng",
+      "tao hop dong",
+      "nhập contract",
+      "nhap contract"
+    ],
+    "answer": "Go to Financial Control → Contracts, select New Contract, choose an active Project and Supplier, complete the required contract information, then select Save Contract."
+  },
+  {
+    "id": "supplier-create",
+    "title": "Create Supplier",
+    "intent": "suppliers",
+    "keywords": [
+      "supplier",
+      "suppliers",
+      "new supplier",
+      "create supplier",
+      "add supplier",
+      "nhà cung cấp",
+      "nha cung cap",
+      "tạo supplier",
+      "tao supplier",
+      "nhập supplier",
+      "nhap supplier",
+      "thêm supplier",
+      "them supplier"
+    ],
+    "answer": "Go to Supplier Management, select Add Supplier, enter Supplier Name, Company/Legal Name, Tax Code, Website, Contact Person, Email, Phone, Address and other profile information as needed, then select Add Supplier."
+  },
+  {
+    "id": "it-assets",
+    "title": "IT Assets & Services",
+    "intent": "itAssets",
+    "keywords": [
+      "it assets",
+      "asset",
+      "assets",
+      "laptop",
+      "desktop",
+      "server",
+      "thiết bị",
+      "thiet bi",
+      "tài sản it",
+      "tai san it",
+      "it services"
+    ],
+    "answer": "Go to Organization → IT Assets & Services. Choose the relevant tab such as Assets, Assignment & Handover, IT Stock / Available, Licenses, IT Services, Maintenance & Warranty, or Domains."
+  },
+  {
+    "id": "licenses",
+    "title": "IT Licenses",
+    "intent": "itAssets",
+    "keywords": [
+      "license",
+      "licenses",
+      "licence",
+      "key windows",
+      "software license",
+      "bản quyền",
+      "ban quyen",
+      "license ở đâu",
+      "license o dau"
+    ],
+    "answer": "Go to Organization → IT Assets & Services → Licenses. Use New/Add License to create a license record, then enter the product/license details, owner or Business Unit, dates and related information."
+  },
+  {
+    "id": "domains",
+    "title": "Domain Management",
+    "intent": "itAssets",
+    "keywords": [
+      "domain",
+      "domains",
+      "tên miền",
+      "ten mien",
+      "new domain",
+      "add domain",
+      "tạo domain",
+      "tao domain",
+      "nhập domain",
+      "nhap domain"
+    ],
+    "answer": "Go to IT Assets & Services → Domains, select New Domain, enter the domain details, Business Unit, Manager, Registrar, Supplier/Contract if applicable, dates and other required fields, then Save."
+  },
+  {
+    "id": "permissions",
+    "title": "Permissions and Data Scope",
+    "intent": "accessControl",
+    "keywords": [
+      "permission",
+      "permissions",
+      "data scope",
+      "quyền",
+      "quyen",
+      "phạm vi dữ liệu",
+      "pham vi du lieu",
+      "không thấy dữ liệu",
+      "khong thay du lieu",
+      "không thấy menu",
+      "khong thay menu"
+    ],
+    "answer": "Functional Permission controls what actions you can perform. Data Scope controls which Projects, Business Units or related data you are allowed to see. If a menu or record is unavailable, contact the MPMS administrator."
+  },
+  {
+    "id": "delete",
+    "title": "Delete / Deactivate",
+    "intent": "generic",
+    "keywords": [
+      "delete",
+      "deactivate",
+      "deactivated",
+      "xóa",
+      "xoa",
+      "xoá",
+      "đã xóa",
+      "da xoa"
+    ],
+    "answer": "Deleted items may be stored as Deactivated for audit purposes. Deactivated items are treated as deleted and should not appear in normal lists or dropdown selections."
+  }
+]

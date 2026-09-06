@@ -12,12 +12,41 @@ public abstract class AuditableEntity
 
 public class OrgUnit : AuditableEntity
 {
+    // BUSINESS_UNIT_PROFILE_V1
+    public string? UnitType { get; set; }
+    public long? ParentOrgUnitId { get; set; }
+    public string? ShortName { get; set; }
+    public string? InternationalName { get; set; }
+    public string? Description { get; set; }
+    public string? LegalType { get; set; }
+    public string? TaxCode { get; set; }
+    public string? RegistrationNo { get; set; }
+    public DateTime? IncorporationDate { get; set; }
+    public string? LegalRepresentative { get; set; }
+    public string? RepresentativeTitle { get; set; }
+    public string? RegisteredAddress { get; set; }
+    public string? OfficeAddress { get; set; }
+    public string? Phone { get; set; }
+    public string? Email { get; set; }
+    public string? Website { get; set; }
+    public string? HeadName { get; set; }
+    public string? FinanceContact { get; set; }
+    public string? ITContact { get; set; }
+    public string? HRContact { get; set; }
+    public string? DefaultCurrency { get; set; }
+    public string? FiscalYear { get; set; }
+    public string? CostCenter { get; set; }
+    public string? CompanyCode { get; set; }
+
     public string Code { get; set; } = "";
     public string Name { get; set; } = "";
     public long? ParentId { get; set; }
     public OrgUnit? Parent { get; set; }
     public string Type { get; set; } = "SBU";
     public string Status { get; set; } = "ACTIVE";
+
+    public DateTime? TaxIssueDate { get; set; }
+    public DateTime? RegistrationIssueDate { get; set; }
 }
 
 public class AppUser : AuditableEntity
@@ -30,6 +59,22 @@ public class AppUser : AuditableEntity
     public string Department { get; set; } = "";
     public string Role { get; set; } = "MEMBER";
     public string Status { get; set; } = "ACTIVE";
+
+    public string? EmployeeCode { get; set; }
+    public string? Phone { get; set; }
+    public string? PersonalEmail { get; set; }
+    public DateTime? DateOfBirth { get; set; }
+    public string? Gender { get; set; }
+    public string? Address { get; set; }
+    public DateTime? JoinDate { get; set; }
+    public string? EmploymentType { get; set; }
+    public long? ManagerUserId { get; set; }
+    public string? EmergencyContactName { get; set; }
+    public string? EmergencyContactPhone { get; set; }
+    public string? Notes { get; set; }
+    public string? ProfileImagePath { get; set; }
+    public string? SignaturePath { get; set; }
+
 }
 
 public class MasterCategory : AuditableEntity
@@ -77,6 +122,15 @@ public class Project : AuditableEntity
     public double HealthScore { get; set; } = 100;
     public string HealthStatus { get; set; } = "GREEN";
     public DateTime? ArchivedAt { get; set; }
+}
+
+public class ProjectOrgUnit : AuditableEntity
+{
+    public long ProjectId { get; set; }
+    public Project? Project { get; set; }
+    public long OrgUnitId { get; set; }
+    public OrgUnit? OrgUnit { get; set; }
+    public bool IsPrimary { get; set; }
 }
 
 public class ProjectMember : AuditableEntity
@@ -215,10 +269,30 @@ public class Supplier : AuditableEntity
     public string Address { get; set; } = "";
     public string Status { get; set; } = "ACTIVE";
     public double Rating { get; set; }
+
+    public string CompanyName { get; set; } = "";
+    public string ShortName { get; set; } = "";
+    public string Website { get; set; } = "";
+    public string BusinessRegistrationNo { get; set; } = "";
+    public string LegalRepresentative { get; set; } = "";
+    public DateOnly? RegistrationDate { get; set; }
+    public string Country { get; set; } = "Vietnam";
+    public string ContactPosition { get; set; } = "";
+    public string AlternativePhone { get; set; } = "";
+    public string ProvinceCity { get; set; } = "";
+    public string PaymentTerms { get; set; } = "";
+    public string Currency { get; set; } = "VND";
+    public string BankName { get; set; } = "";
+    public string BankAccountNo { get; set; } = "";
+    public string BankAccountName { get; set; } = "";
+    public string BankBranch { get; set; } = "";
+    public long? InternalOwnerId { get; set; }
+    public string Notes { get; set; } = "";
 }
 
 public class Contract : AuditableEntity
 {
+    public long OrgUnitId { get; set; }
     public long ProjectId { get; set; }
     public Project? Project { get; set; }
     public long SupplierId { get; set; }
@@ -349,6 +423,12 @@ public class ApprovalStep : AuditableEntity
 
 public class DocumentRecord : AuditableEntity
 {
+    public string StorageProvider { get; set; } = "LOCAL";
+    public string? StorageDriveId { get; set; }
+    public string? StorageItemId { get; set; }
+    public string? StorageWebUrl { get; set; }
+    public string? StoragePath { get; set; }
+
     public long OrgUnitId { get; set; }
     public string EntityType { get; set; } = "";
     public long EntityId { get; set; }
@@ -393,4 +473,42 @@ public class ActivityLog
     public string IpAddress { get; set; } = "";
     public string UserAgent { get; set; } = "";
     public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+}
+
+
+public class ITDomain
+{
+    public long Id { get; set; }
+    public long? OrgUnitId { get; set; }
+    public long? SupplierId { get; set; }
+    public long? ContractId { get; set; }
+    public long? ManagerUserId { get; set; }
+    public string DomainName { get; set; } = "";
+    public string DomainType { get; set; } = "INTERNATIONAL";
+    public string Purpose { get; set; } = "";
+    public string Registrar { get; set; } = "";
+    public string RegistrarUrl { get; set; } = "";
+    public string LoginEmail { get; set; } = "";
+    public string LoginPasswordProtected { get; set; } = "";
+    public DateOnly? RegistrationDate { get; set; }
+    public DateOnly? ExpiryDate { get; set; }
+    public string RenewalStatus { get; set; } = "MANUAL";
+    public bool AutoRenew { get; set; }
+    public bool WhoisPrivacy { get; set; }
+    public string DnsProvider { get; set; } = "";
+    public string NameServers { get; set; } = "";
+    public string RegistrantOrganization { get; set; } = "";
+    public string RegistrantContact { get; set; } = "";
+    public string AdminContact { get; set; } = "";
+    public string TechnicalContact { get; set; } = "";
+    public string DeclarationNo { get; set; } = "";
+    public DateOnly? DeclarationDate { get; set; }
+    public string RecoveryEmail { get; set; } = "";
+    public string MfaMethod { get; set; } = "";
+    public string Status { get; set; } = "ACTIVE";
+    public string Notes { get; set; } = "";
+    public long? CreatedByUserId { get; set; }
+    public long? UpdatedByUserId { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }

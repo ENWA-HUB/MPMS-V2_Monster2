@@ -1,0 +1,169 @@
+/* MPMS Domain Management form layout */
+.domain-modal {
+  width: min(1180px, calc(100vw - 48px)) !important;
+  max-width: 1180px !important;
+  max-height: 92vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+}
+
+.domain-modal .budget-modal-head {
+  flex: 0 0 auto;
+  padding: 26px 30px 22px !important;
+  background: #fff;
+  border-bottom: 1px solid #e5eaf0;
+  z-index: 5;
+}
+
+.domain-modal .domain-modal-body,
+.domain-modal .budget-modal-body {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 24px 30px 28px !important;
+  background: #fff;
+}
+
+.domain-modal .domain-form-grid,
+.domain-modal .budget-form-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  column-gap: 28px !important;
+  row-gap: 22px !important;
+  align-items: start !important;
+}
+
+.domain-modal .budget-form-grid > label,
+.domain-modal .domain-form-grid > label {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  font-weight: 600 !important;
+  line-height: 1.25 !important;
+  overflow: visible !important;
+}
+
+.domain-modal label > input,
+.domain-modal label > select,
+.domain-modal label > textarea {
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+}
+
+.domain-modal input,
+.domain-modal select {
+  min-height: 48px !important;
+}
+
+.domain-modal textarea {
+  min-height: 84px !important;
+  resize: vertical;
+}
+
+.domain-modal .bu-span-2 {
+  grid-column: 1 / -1 !important;
+}
+
+.domain-modal .bu-profile-section {
+  margin: 22px 30px 0 !important;
+  padding: 18px 20px !important;
+  border: 1px solid #e3e9f0;
+  border-radius: 12px;
+  background: #f9fbfd;
+  flex: 0 0 auto;
+}
+
+.domain-modal .bu-profile-section h4 {
+  margin: 0 0 8px !important;
+}
+
+.domain-modal .it-domain-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.domain-modal .domain-modal-actions,
+.domain-modal .budget-modal-actions {
+  position: sticky !important;
+  bottom: 0 !important;
+  flex: 0 0 auto !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 12px !important;
+  padding: 16px 30px !important;
+  margin: 0 !important;
+  background: #fff !important;
+  border-top: 1px solid #e5eaf0 !important;
+  box-shadow: 0 -8px 24px rgba(15, 35, 60, .06);
+  z-index: 20 !important;
+}
+
+.domain-modal .domain-modal-actions button,
+.domain-modal .budget-modal-actions button {
+  min-width: 110px;
+  min-height: 44px;
+}
+
+@media (max-width: 900px) {
+  .domain-modal {
+    width: calc(100vw - 24px) !important;
+    max-height: 95vh !important;
+  }
+
+  .domain-modal .domain-form-grid,
+  .domain-modal .budget-form-grid {
+    grid-template-columns: 1fr !important;
+    gap: 18px !important;
+  }
+
+  .domain-modal .bu-span-2 {
+    grid-column: 1 !important;
+  }
+
+  .domain-modal .budget-modal-head,
+  .domain-modal .domain-modal-body,
+  .domain-modal .budget-modal-body,
+  .domain-modal .domain-modal-actions,
+  .domain-modal .budget-modal-actions {
+    padding-left: 18px !important;
+    padding-right: 18px !important;
+  }
+
+  .domain-modal .bu-profile-section {
+    margin-left: 18px !important;
+    margin-right: 18px !important;
+  }
+}
+
+/* Domain attachments behave like a normal form input */
+.domain-modal .domain-attachment-field {
+  grid-column: 1 / -1 !important;
+}
+
+.domain-modal .domain-attachment-input {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 8px 0;
+}
+
+.domain-modal .domain-attachment-input .secondary {
+  min-height: 44px;
+}
+
+.domain-modal .domain-attachment-field .it-domain-files {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

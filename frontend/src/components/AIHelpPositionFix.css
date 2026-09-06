@@ -1,0 +1,48 @@
+/* Keep AI Help at the screen footer and outside the compact KPI review modal. */
+.mpms-ai-help-launcher {
+  bottom: 14px !important;
+}
+
+.mpms-ai-help-panel {
+  bottom: 72px !important;
+  height: min(610px, calc(100vh - 92px)) !important;
+}
+
+.kpi-review-modal .kpi-score-result-table {
+  table-layout: fixed !important;
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+.kpi-review-modal .kpi-score-result-table th,
+.kpi-review-modal .kpi-score-result-table td {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  vertical-align: top;
+  line-height: 1.4;
+}
+
+.kpi-review-modal .kpi-score-result-table .kpi-score-input {
+  box-sizing: border-box;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+@media (max-width: 600px) {
+  .mpms-ai-help-launcher {
+    bottom: 10px !important;
+  }
+
+  .mpms-ai-help-panel {
+    bottom: 66px !important;
+    height: calc(100vh - 82px) !important;
+  }
+
+  .kpi-review-modal .budget-modal-actions {
+    padding-right: 16px !important;
+    padding-bottom: 68px !important;
+  }
+}

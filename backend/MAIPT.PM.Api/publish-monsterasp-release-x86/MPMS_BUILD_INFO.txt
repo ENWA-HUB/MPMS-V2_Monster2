@@ -1,5 +1,0 @@
-MPMS MonsterASP Release
-Built: Tue Aug 18 18:10:12 +07 2026
-Runtime: win-x86
-Self-contained: true
-Includes latest frontend, backend, SQLite database, master-data updates, and approval e-mail/deep-link changes.

@@ -17,6 +17,12 @@ const reportCards=[
 ];
 
 export function ReportsPage(){
+ const [canDownloadReports,setCanDownloadReports]=useState(false);
+ useEffect(()=>{getJson<any>('/access/me').then(a=>{
+   const p=a?.permissions?.REPORTS||[];
+   setCanDownloadReports(p.includes('DOWNLOAD'));
+ }).catch(()=>setCanDownloadReports(false))},[]);
+
  const [tasks,setTasks]=useState<Task[]>([]); const [projects,setProjects]=useState<Project[]>([]);
  const [budget,setBudget]=useState<Budget|null>(null); const [supplier,setSupplier]=useState<SupplierOverview|null>(null);
  const [dash,setDash]=useState<Dashboard|null>(null);
@@ -38,12 +44,12 @@ export function ReportsPage(){
  return <>
   <div className="page-title reports-title">
    <div><h1>Reports & Analytics</h1><p>Comprehensive reports, executive analytics and portfolio visualization</p></div>
-   <div className="supplier-actions"><button className="secondary" onClick={exportPdf}>Export PDF</button><button className="budget-primary" onClick={exportJson}>Generate Report</button></div>
+   <div className="supplier-actions">{canDownloadReports&&<button className="secondary" onClick={exportPdf}>Export PDF</button>}<button className="budget-primary" onClick={exportJson}>Generate Report</button></div>
   </div>
 
   <section className="report-cards">
    {reportCards.map((r,i)=>{const Icon=r.icon;return <article className="report-card" key={r.title}>
-    <div className="report-card-icon"><Icon/></div><button className="report-download" onClick={exportJson}><Download/></button>
+    <div className="report-card-icon"><Icon/></div>{canDownloadReports&&<button className="report-download" onClick={exportJson}><Download/></button>}
     <b>{r.title}</b><span>{r.type}</span><small><CalendarDays size={11}/> Aug 2026 · {i===0?'145':i===1?'89':i===2?'67':'112'} downloads</small><em>{r.size}</em>
    </article>})}
   </section>

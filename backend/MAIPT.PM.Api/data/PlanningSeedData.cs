@@ -124,7 +124,7 @@ CREATE INDEX IF NOT EXISTS IX_PerformanceItems_Period_Project ON PerformanceItem
         var input = JsonSerializer.Deserialize<PerformanceImport>(await File.ReadAllTextAsync(path), new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         if (input is null) return;
 
-        var org = await db.OrgUnits.OrderBy(x => x.Id).FirstAsync();
+        var org = await db.OrgUnits.Where(x=>x.Status!="DEACTIVATED" && x.Status!="DELETED").OrderBy(x => x.Id).FirstAsync();
         foreach (var person in input.Periods.Select(x => x.Employee).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct())
         {
             if (!await db.Users.AnyAsync(x => x.Name == person))

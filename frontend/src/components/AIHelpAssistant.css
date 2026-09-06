@@ -1,0 +1,12 @@
+.mpms-ai-help-launcher{position:fixed;right:24px;bottom:24px;z-index:1200;border:0;border-radius:999px;background:#0b3565;color:#fff;height:46px;padding:0 18px;display:flex;align-items:center;gap:8px;font-weight:700;box-shadow:0 8px 26px rgba(8,34,66,.22);cursor:pointer}
+.mpms-ai-help-panel{position:fixed;right:22px;bottom:82px;width:min(390px,calc(100vw - 28px));height:min(610px,calc(100vh - 120px));z-index:1300;background:#fff;border:1px solid #dfe7ef;border-radius:16px;box-shadow:0 20px 60px rgba(13,35,61,.2);display:flex;flex-direction:column;overflow:hidden}
+.mpms-ai-help-head{display:flex;align-items:center;justify-content:space-between;padding:15px 16px;border-bottom:1px solid #e8edf3}
+.mpms-ai-help-title{display:flex;gap:10px;align-items:center;color:#10233f}.mpms-ai-help-title>div{display:flex;flex-direction:column}.mpms-ai-help-title small{font-size:11px;color:#7b8ba1;margin-top:2px}
+.mpms-ai-help-head>button{border:0;background:transparent;color:#68788f;cursor:pointer}
+.mpms-ai-help-context{font-size:11px;color:#6b7a90;padding:8px 14px;background:#f7f9fc;display:flex;gap:5px;align-items:center}
+.mpms-ai-help-messages{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+.mpms-ai-msg{max-width:88%;padding:10px 12px;border-radius:12px;font-size:13px;line-height:1.5;white-space:pre-wrap}
+.mpms-ai-msg.assistant{align-self:flex-start;background:#f0f4f8;color:#1b2b42}.mpms-ai-msg.user{align-self:flex-end;background:#0b3565;color:#fff}
+.mpms-ai-help-quick{padding:0 12px 8px;display:flex;gap:6px;overflow:auto}.mpms-ai-help-quick button{white-space:nowrap;border:1px solid #dbe3ec;background:#fff;border-radius:999px;padding:6px 9px;font-size:10px;color:#40516a;cursor:pointer}
+.mpms-ai-help-input{display:flex;gap:8px;padding:11px;border-top:1px solid #e6ebf1}.mpms-ai-help-input input{flex:1;border:1px solid #d7e0ea;border-radius:10px;padding:10px 12px;outline:none}.mpms-ai-help-input button{width:40px;border:0;border-radius:10px;background:#0b3565;color:#fff;display:grid;place-items:center;cursor:pointer}.mpms-ai-help-input button:disabled{opacity:.45;cursor:not-allowed}
+@media(max-width:600px){.mpms-ai-help-launcher span{display:none}.mpms-ai-help-launcher{width:46px;padding:0;justify-content:center;right:14px;bottom:14px}.mpms-ai-help-panel{right:8px;bottom:68px;width:calc(100vw - 16px);height:calc(100vh - 84px)}}
